@@ -20,6 +20,13 @@ interface PlaybackPatch {
   duration?: number;
 }
 
+/** Resolved metadata for the currently-playing track (via duration match). */
+export interface TrackInfo {
+  name: string;
+  artist: string;
+  image: string | null;
+}
+
 interface MusicState {
   /** Embed controller has loaded and is ready to accept commands. */
   ready: boolean;
@@ -29,10 +36,13 @@ interface MusicState {
   duration: number;
   /** Whether the user has started playback at least once this session. */
   started: boolean;
+  /** Metadata for the current track, or null when unmatched/unavailable. */
+  track: TrackInfo | null;
   controls: MusicControls | null;
   setReady: (ready: boolean) => void;
   setPlayback: (patch: PlaybackPatch) => void;
   setStarted: (started: boolean) => void;
+  setTrack: (track: TrackInfo | null) => void;
   registerControls: (controls: MusicControls | null) => void;
 }
 
@@ -42,9 +52,11 @@ export const useMusicStore = create<MusicState>((set) => ({
   position: 0,
   duration: 0,
   started: false,
+  track: null,
   controls: null,
   setReady: (ready) => set({ ready }),
   setPlayback: (patch) => set(patch),
   setStarted: (started) => set({ started }),
+  setTrack: (track) => set({ track }),
   registerControls: (controls) => set({ controls }),
 }));

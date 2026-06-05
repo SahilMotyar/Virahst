@@ -24,6 +24,7 @@ Open the printed `http://localhost:<port>`.
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SPOTIFY_PLAYLIST_URI` | Playlist for the ambient `MusicBar`, as `spotify:playlist:<id>`. Falls back to a default in `src/config.ts`. |
+| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | Optional, **server-only**. Enables real artist/title/artwork in the widget (see Music). Without them the widget still works with a placeholder label. |
 
 ## Configuration
 
@@ -45,10 +46,22 @@ Drop transparent PNGs into `public/items/` named `<slug>.png` (slugs are in
 ## Music
 
 The `MusicBar` uses the **Spotify IFrame API** (no Premium/OAuth needed): a 1px-hidden
-embed drives a custom bar built from `playback_update` events. Autoplay is browser-blocked,
-so it starts paused and remembers your start choice in `localStorage`. The IFrame API does
-not expose track title/artist — richer "what's playing" would need the **Web Playback SDK +
-OAuth (PKCE)**, the intended upgrade path (not built).
+embed drives a custom bottom-left widget built from `playback_update` events. Autoplay is
+browser-blocked, so it starts paused and remembers your start choice in `localStorage`.
+Skip buttons nudge ±15s (the IFrame API can't change tracks).
+
+The IFrame API doesn't expose track metadata, and Spotify's Client-Credentials token can no
+longer read playlist tracks (late-2024 lockdown — both `/playlists/{id}` and `/tracks` omit
+or 403 the track list). So for real **artist / title / artwork** the app reads the track
+list the **embed page bootstraps** for its own iframe (title/artist/duration, no login),
+hydrates album art per-track via `/tracks/{id}` (the only track endpoint still open to app
+tokens — the batch `/tracks?ids=` is 403'd), and the widget matches the currently-playing
+song by its **duration**. `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` enable the artwork.
+
+Caveats: this relies on the embed's undocumented JSON and only covers the tracks the embed
+preloads (~the first several) — other songs fall back to the placeholder label. Full,
+guaranteed metadata + real next/previous-track skipping would need the **Web Playback SDK +
+OAuth (PKCE)** (visitor login + Premium) — the documented upgrade path.
 
 ## Tech
 
