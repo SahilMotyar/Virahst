@@ -73,6 +73,10 @@ export function MusicBar() {
   const containerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<SpotifyEmbedController | null>(null);
   const currentIndexRef = useRef(0);
+  // The disc rotates via rAF (not CSS) so it can't be killed by a global
+  // prefers-reduced-motion rule and doesn't depend on a keyframe.
+  const discRef = useRef<HTMLDivElement>(null);
+  const angleRef = useRef(0);
 
   const { ready, isPaused, position, duration } = useMusicStore();
   const controls = useMusicStore((s) => s.controls);
@@ -176,11 +180,30 @@ export function MusicBar() {
     };
   }, [setReady, setPlayback, setStarted, setTrack, registerControls]);
 
-  if (!config.flags.MUSIC_ENABLED) return null;
-
   const ratio = duration > 0 ? Math.min(1, position / duration) : 0;
   const playing = ready && !isPaused;
   const disabled = !ready || !controls;
+
+  // Spin the album disc while playing (≈8s per rotation), continuing from the
+  // current angle so play/pause doesn't snap.
+  useEffect(() => {
+    if (!playing) return;
+    let raf = 0;
+    let last = performance.now();
+    const step = (now: number) => {
+      const dt = now - last;
+      last = now;
+      angleRef.current = (angleRef.current + (dt / 8000) * 360) % 360;
+      if (discRef.current) {
+        discRef.current.style.transform = `rotate(${angleRef.current}deg)`;
+      }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [playing]);
+
+  if (!config.flags.MUSIC_ENABLED) return null;
 
   const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -197,19 +220,19 @@ export function MusicBar() {
         className="pointer-events-none fixed bottom-0 left-0 h-px w-px overflow-hidden opacity-0"
       />
 
-      <div className="fixed bottom-5 left-5 z-40 w-80 max-w-[calc(100vw-2.5rem)]">
-        <div className="relative flex items-center rounded-[22px] border border-black/5 bg-bg/95 py-3 pl-24 pr-4 shadow-[0_1px_2px_rgba(0,0,0,.05),0_14px_36px_rgba(0,0,0,.14)] backdrop-blur">
-          {/* Album disc. Outer scales up slightly when playing; inner spins. */}
+      <div className="fixed bottom-5 left-5 z-40 w-84 max-w-[calc(100vw-2.5rem)]">
+        <div className="relative flex items-center rounded-[22px] border border-black/5 bg-bg/95 py-3 pl-30 pr-4 shadow-[0_1px_2px_rgba(0,0,0,.05),0_14px_36px_rgba(0,0,0,.14)] backdrop-blur">
+          {/* Album disc. Outer scales up slightly when playing; inner spins (rAF). */}
           <div
-            className="absolute -top-3 left-3.5 h-20 w-20"
+            className="absolute -top-4 left-4 h-24 w-24"
             style={{
-              transform: playing ? "scale(1.08)" : "scale(1)",
+              transform: playing ? "scale(1.06)" : "scale(1)",
               transition: "transform 0.3s ease",
             }}
           >
             <div
-              className="h-full w-full overflow-hidden rounded-full shadow-[0_10px_24px_rgba(0,0,0,.28)]"
-              style={playing ? { animation: "virasat-spin 8s linear infinite" } : undefined}
+              ref={discRef}
+              className="h-full w-full overflow-hidden rounded-full shadow-[0_10px_24px_rgba(0,0,0,.28)] will-change-transform"
             >
               {track?.image ? (
                 // eslint-disable-next-line @next/next/no-img-element -- remote Spotify CDN art; next/image config not needed for an 80px thumb.
