@@ -24,7 +24,7 @@ Open the printed `http://localhost:<port>`.
 | Variable | Purpose |
 | --- | --- |
 | `NEXT_PUBLIC_SPOTIFY_PLAYLIST_URI` | Playlist for the ambient `MusicBar`, as `spotify:playlist:<id>`. Falls back to a default in `src/config.ts`. |
-| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | Optional, **server-only**. Enables real artist/title/artwork in the widget (see Music). Without them the widget still works with a placeholder label. |
+| `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` | Optional, **only used by `npm run gen:playlist`** to fetch album art when regenerating the playlist snapshot. Not read at runtime. |
 
 ## Configuration
 
@@ -50,18 +50,24 @@ embed drives a custom bottom-left widget built from `playback_update` events. Au
 browser-blocked, so it starts paused and remembers your start choice in `localStorage`.
 Skip buttons nudge ±15s (the IFrame API can't change tracks).
 
-The IFrame API doesn't expose track metadata, and Spotify's Client-Credentials token can no
-longer read playlist tracks (late-2024 lockdown — both `/playlists/{id}` and `/tracks` omit
-or 403 the track list). So for real **artist / title / artwork** the app reads the track
-list the **embed page bootstraps** for its own iframe (title/artist/duration, no login),
-hydrates album art per-track via `/tracks/{id}` (the only track endpoint still open to app
-tokens — the batch `/tracks?ids=` is 403'd), and the widget matches the currently-playing
-song by its **duration**. `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` enable the artwork.
+For real **artist / title / artwork** the widget matches the currently-playing song by its
+**duration** against a **static snapshot** of the playlist in
+[`src/data/playlistTracks.ts`](src/data/playlistTracks.ts). This needs no runtime API,
+credentials, or login — and Spotify's lockdown (Client-Credentials tokens can no longer read
+playlist tracks) doesn't matter because the data is baked in.
 
-Caveats: this relies on the embed's undocumented JSON and only covers the tracks the embed
-preloads (~the first several) — other songs fall back to the placeholder label. Full,
-guaranteed metadata + real next/previous-track skipping would need the **Web Playback SDK +
-OAuth (PKCE)** (visitor login + Premium) — the documented upgrade path.
+To (re)generate the snapshot:
+
+1. Export the playlist as CSV via [exportify.net](https://exportify.net) → save as `data/playlist.csv`.
+2. `npm run gen:playlist` — reads the CSV (name/artist/duration) and hydrates album art once
+   via Spotify's `/tracks/{id}` endpoint, writing `src/data/playlistTracks.ts`.
+
+Art hydration uses `SPOTIFY_CLIENT_ID` / `SPOTIFY_CLIENT_SECRET` from `.env.local` **at
+generation time only** (single-track endpoint — the batch one is 403'd). Without them the
+snapshot still works, just with `image: null`. The widget covers every track in the snapshot.
+
+Real next/previous-track skipping would need the **Web Playback SDK + OAuth (PKCE)** (visitor
+login + Premium) — the documented upgrade path. The IFrame API only supports play/pause/seek.
 
 ## Tech
 

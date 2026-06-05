@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "gen:playlist": "node scripts/gen-playlist.mjs"
   },
   "dependencies": {
     "motion": "^12.40.0",

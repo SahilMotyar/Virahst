@@ -42,6 +42,13 @@ body {
   -webkit-user-select: none;
 }
 
+/* Slow vinyl-style rotation for the now-playing album disc. */
+@keyframes virasat-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
