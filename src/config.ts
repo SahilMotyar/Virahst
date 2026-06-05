@@ -27,6 +27,12 @@ export const config = {
     INFINITE_WRAP: true,
     /** Master switch for the ambient music bar. */
     MUSIC_ENABLED: false,
+    /**
+     * Whether real item images exist under /public/items. While false, items
+     * render <Placeholder> directly and skip the <img> entirely — avoiding a
+     * storm of 404 requests. Flip to true once assets are dropped in.
+     */
+    ASSETS_PRESENT: false,
   },
 } as const;
 
@@ -85,4 +91,4 @@ export const GRID_BOUNDS = {
 } as const;
 
 /** Extra world-space margin (px) of items mounted beyond the viewport edge. */
-export const OVERSCAN = 320;
+export const OVERSCAN = 220;

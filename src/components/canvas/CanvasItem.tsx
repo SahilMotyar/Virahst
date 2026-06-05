@@ -8,7 +8,7 @@
  */
 
 import { memo, useState } from "react";
-import { ITEM_W, ITEM_H } from "@/config";
+import { ITEM_W, ITEM_H, config } from "@/config";
 import type { VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
 
@@ -19,10 +19,11 @@ interface CanvasItemProps {
 }
 
 function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
-  // Most images are absent → start by attempting load, fall back on error.
+  // While ASSETS_PRESENT is false, skip <img> entirely (no 404s) and render the
+  // placeholder directly. With assets present, attempt load and fall back on error.
   const [errored, setErrored] = useState(false);
   const [loaded, setLoaded] = useState(false);
-  const showImage = item.image && !errored;
+  const showImage = config.flags.ASSETS_PRESENT && Boolean(item.image) && !errored;
 
   return (
     <div
@@ -35,10 +36,12 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
       }}
     >
       <div
-        className="relative w-full"
+        className="relative w-full overflow-hidden rounded-[14px]"
         style={{
           height: ITEM_H,
-          filter: "drop-shadow(0 6px 14px rgba(26,18,8,0.10))",
+          // box-shadow (vs filter: drop-shadow) is far cheaper to composite
+          // across the hundreds of items mounted when zoomed out.
+          boxShadow: "0 1px 2px rgba(26,18,8,.05), 0 6px 16px rgba(26,18,8,.07)",
         }}
       >
         {showImage ? (

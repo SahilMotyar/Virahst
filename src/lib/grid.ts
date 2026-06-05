@@ -7,6 +7,8 @@
 import {
   CELL_W,
   CELL_H,
+  ITEM_W,
+  ITEM_H,
   JITTER,
   HERO_HOLE,
   GRID_BOUNDS,
@@ -19,11 +21,16 @@ export interface WorldPos {
   y: number;
 }
 
+// Offsets that centre an item's footprint inside its cell, so every column and
+// row lines up as a clean matrix regardless of jitter.
+const OFFSET_X = (CELL_W - ITEM_W) / 2;
+const OFFSET_Y = (CELL_H - ITEM_H) / 2;
+
 /** World position (top-left of the item's footprint) for a grid cell. */
 export function cellToWorld(col: number, row: number): WorldPos {
   return {
-    x: col * CELL_W + seededJitter(`${col}:${row}:x`, JITTER),
-    y: row * CELL_H + seededJitter(`${col}:${row}:y`, JITTER),
+    x: col * CELL_W + OFFSET_X + (JITTER ? seededJitter(`${col}:${row}:x`, JITTER) : 0),
+    y: row * CELL_H + OFFSET_Y + (JITTER ? seededJitter(`${col}:${row}:y`, JITTER) : 0),
   };
 }
 

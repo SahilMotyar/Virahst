@@ -3,11 +3,15 @@
 /**
  * Hand-rolled pan/zoom/momentum camera for the infinite canvas.
  *
- * Design (see brief §4.7): the live transform lives in a mutable ref and is
- * written directly to the layer's style each frame — React never re-renders on
- * pointermove. The Zustand store is synced on a throttle (and on settle) only
- * to drive virtualization + the zoom readout. Pointer Events cover mouse +
- * touch (incl. two-finger pinch); wheel handles trackpad pan and ctrl/⌘ zoom.
+ * Performance model (brief §4.7): the live transform lives in a mutable ref and
+ * is written directly to the layer's style every frame — React never re-renders
+ * on pointermove. The store is touched only when it matters:
+ *   • the visible cell range changes (→ items mount/unmount), or
+ *   • the zoom scale changes (→ throttled readout update).
+ * Panning within the same cell range triggers zero React renders.
+ *
+ * Pointer Events cover mouse + touch (incl. two-finger pinch); wheel handles
+ * trackpad pan and ctrl/⌘ zoom.
  */
 
 import { useEffect, useRef, type RefObject } from "react";
@@ -17,16 +21,19 @@ import {
   INITIAL_SCALE,
   MOMENTUM_DECAY,
   HERO_CENTER,
+  CELL_W,
+  CELL_H,
+  OVERSCAN,
 } from "@/config";
-import { useCameraStore } from "@/store/cameraStore";
+import { useCameraStore, type CellRange } from "@/store/cameraStore";
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
 
 /** Min velocity (px/frame) below which momentum stops. */
 const MIN_VELOCITY = 0.05;
-/** How often (ms) to push the live camera into the store for virtualization. */
-const COMMIT_INTERVAL = 70;
+/** How often (ms) to push the scale readout into the store. */
+const SCALE_INTERVAL = 60;
 
 interface Cam {
   x: number;
@@ -42,7 +49,8 @@ export function useCanvasCamera(
   const cam = useRef<Cam>({ x: 0, y: 0, scale: INITIAL_SCALE });
   const initialised = useRef(false);
 
-  const setCamera = useCameraStore((s) => s.setCamera);
+  const setScale = useCameraStore((s) => s.setScale);
+  const setRange = useCameraStore((s) => s.setRange);
   const registerControls = useCameraStore((s) => s.registerControls);
 
   useEffect(() => {
@@ -60,13 +68,44 @@ export function useCanvasCamera(
       layer.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
     };
 
-    // --- throttled store sync (drives virtualization + readout) --------
-    let lastCommit = 0;
-    const commit = (force = false) => {
+    // --- sync visible cell range (only on change → rare re-render) ------
+    let lastRange: CellRange = { minCol: 0, maxCol: -1, minRow: 0, maxRow: -1 };
+    const syncRange = () => {
+      const w = container.clientWidth;
+      const h = container.clientHeight;
+      if (w === 0 || h === 0) return;
+      const { x, y, scale } = cam.current;
+      const leftWorld = (0 - x) / scale - OVERSCAN;
+      const topWorld = (0 - y) / scale - OVERSCAN;
+      const rightWorld = (w - x) / scale + OVERSCAN;
+      const bottomWorld = (h - y) / scale + OVERSCAN;
+      const next: CellRange = {
+        minCol: Math.floor(leftWorld / CELL_W),
+        maxCol: Math.ceil(rightWorld / CELL_W),
+        minRow: Math.floor(topWorld / CELL_H),
+        maxRow: Math.ceil(bottomWorld / CELL_H),
+      };
+      if (
+        next.minCol !== lastRange.minCol ||
+        next.maxCol !== lastRange.maxCol ||
+        next.minRow !== lastRange.minRow ||
+        next.maxRow !== lastRange.maxRow
+      ) {
+        lastRange = next;
+        setRange(next);
+      }
+    };
+
+    // --- sync scale readout (throttled) --------------------------------
+    let lastScaleCommit = 0;
+    let lastScaleValue = -1;
+    const syncScale = (force = false) => {
       const now = performance.now();
-      if (!force && now - lastCommit < COMMIT_INTERVAL) return;
-      lastCommit = now;
-      setCamera({ ...cam.current });
+      if (!force && now - lastScaleCommit < SCALE_INTERVAL) return;
+      if (cam.current.scale === lastScaleValue) return;
+      lastScaleCommit = now;
+      lastScaleValue = cam.current.scale;
+      setScale(cam.current.scale);
     };
 
     // --- initial framing: centre the hero hole -------------------------
@@ -81,7 +120,8 @@ export function useCanvasCamera(
       initialised.current = true;
     }
     apply();
-    commit(true);
+    syncRange();
+    syncScale(true);
 
     // --- momentum loop -------------------------------------------------
     const velocity = { x: 0, y: 0 };
@@ -98,12 +138,11 @@ export function useCanvasCamera(
       cam.current.x += velocity.x;
       cam.current.y += velocity.y;
       apply();
-      commit();
+      syncRange();
       if (Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY) {
         momentumRAF = requestAnimationFrame(momentumStep);
       } else {
         momentumRAF = 0;
-        commit(true);
       }
     };
 
@@ -120,14 +159,14 @@ export function useCanvasCamera(
         y: cy - worldY * newScale,
       };
       apply();
-      commit();
+      syncRange();
+      syncScale();
     };
 
     // --- pointer (pan + pinch) -----------------------------------------
     const pointers = new Map<number, { x: number; y: number }>();
     let dragging = false;
     let last = { x: 0, y: 0, t: 0 };
-    // Pinch state.
     let pinchDist = 0;
 
     const onPointerDown = (e: PointerEvent) => {
@@ -177,7 +216,7 @@ export function useCanvasCamera(
       velocity.y = (dy / dt) * 16;
       last = { x: e.clientX, y: e.clientY, t: now };
       apply();
-      commit();
+      syncRange();
     };
 
     const endPointer = (e: PointerEvent) => {
@@ -198,8 +237,6 @@ export function useCanvasCamera(
           ) {
             stopMomentum();
             momentumRAF = requestAnimationFrame(momentumStep);
-          } else {
-            commit(true);
           }
         }
       } else if (pointers.size === 1) {
@@ -223,7 +260,7 @@ export function useCanvasCamera(
         cam.current.x -= e.deltaX;
         cam.current.y -= e.deltaY;
         apply();
-        commit();
+        syncRange();
       }
     };
 
@@ -240,14 +277,14 @@ export function useCanvasCamera(
         stopMomentum();
         const rect = container.getBoundingClientRect();
         zoomAt(rect.width / 2, rect.height / 2, factor);
-        commit(true);
+        syncScale(true);
       },
     });
 
-    // --- keep hero centred on resize -----------------------------------
+    // --- re-frame / re-measure on resize -------------------------------
     const onResize = () => {
       apply();
-      commit(true);
+      syncRange();
     };
     window.addEventListener("resize", onResize);
 
@@ -261,5 +298,5 @@ export function useCanvasCamera(
       window.removeEventListener("resize", onResize);
       registerControls(null);
     };
-  }, [containerRef, layerRef, setCamera, registerControls]);
+  }, [containerRef, layerRef, setScale, setRange, registerControls]);
 }

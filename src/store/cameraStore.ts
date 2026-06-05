@@ -1,11 +1,13 @@
 /**
- * Camera state for the infinite canvas.
+ * Camera-derived state that React needs.
  *
  * The *live* transform during a drag/flick is owned by useCanvasCamera and
- * written straight to the DOM via a ref (no React render per frame). This store
- * holds the throttled, "committed" camera that drives virtualization recompute
- * and the zoom-percentage readout. It also exposes imperative zoom controls so
- * the fixed ZoomControls overlay (not a child of Canvas) can drive the camera.
+ * written straight to the DOM via a ref — React never renders per frame. This
+ * store holds only two things React actually cares about:
+ *   • `range`  — the visible cell range; changes only when items must mount or
+ *                unmount, so Canvas re-renders rarely (not on every pan frame).
+ *   • `scale`  — for the zoom-percentage readout (committed on a throttle).
+ * It also exposes imperative zoom controls for the fixed ZoomControls overlay.
  */
 
 import { create } from "zustand";
@@ -16,21 +18,30 @@ export interface CameraControls {
   zoomByCenter: (factor: number) => void;
 }
 
+export interface CellRange {
+  minCol: number;
+  maxCol: number;
+  minRow: number;
+  maxRow: number;
+}
+
+/** Empty range (min > max) so nothing mounts until the hook measures + sets it. */
+const EMPTY_RANGE: CellRange = { minCol: 0, maxCol: -1, minRow: 0, maxRow: -1 };
+
 interface CameraState {
-  x: number;
-  y: number;
   scale: number;
-  /** Set by useCanvasCamera once mounted; null before the canvas exists. */
+  range: CellRange;
   controls: CameraControls | null;
-  setCamera: (cam: { x: number; y: number; scale: number }) => void;
+  setScale: (scale: number) => void;
+  setRange: (range: CellRange) => void;
   registerControls: (controls: CameraControls | null) => void;
 }
 
 export const useCameraStore = create<CameraState>((set) => ({
-  x: 0,
-  y: 0,
   scale: INITIAL_SCALE,
+  range: EMPTY_RANGE,
   controls: null,
-  setCamera: (cam) => set(cam),
+  setScale: (scale) => set({ scale }),
+  setRange: (range) => set({ range }),
   registerControls: (controls) => set({ controls }),
 }));
