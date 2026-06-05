@@ -3,6 +3,7 @@ import { Inter, Mukta, Modak } from "next/font/google";
 import "./globals.css";
 import { config } from "@/config";
 import { TopNav } from "@/components/nav/TopNav";
+import { MusicBar } from "@/components/music/MusicBar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -49,6 +50,7 @@ export default function RootLayout({
         <TopNav />
         {children}
         {modal}
+        <MusicBar />
       </body>
     </html>
   );

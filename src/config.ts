@@ -17,16 +17,19 @@ export const config = {
   /** Credit line in the hero block. */
   handle: "@virasat",
 
-  // --- Music (Phase 4 — placeholder for now) -----------------------------
+  // --- Music (Phase 4) ---------------------------------------------------
   spotifyPlaylistUri:
-    process.env.NEXT_PUBLIC_SPOTIFY_PLAYLIST_URI ?? "spotify:playlist:37i9dQZF1DX0XUfTFmNBRM",
+    process.env.NEXT_PUBLIC_SPOTIFY_PLAYLIST_URI ??
+    "spotify:playlist:0aBAEnrFO9opzfor65TEcu",
+  /** Label shown in the MusicBar (no track metadata via the IFrame API). */
+  musicLabel: "Ambient · विरासत",
 
   // --- Feature flags -----------------------------------------------------
   flags: {
     /** Tile the grid endlessly by wrapping the item list (see lib/grid.ts). */
     INFINITE_WRAP: true,
     /** Master switch for the ambient music bar. */
-    MUSIC_ENABLED: false,
+    MUSIC_ENABLED: true,
     /**
      * Whether real item images exist under /public/items. While false, items
      * render <Placeholder> directly and skip the <img> entirely — avoiding a
