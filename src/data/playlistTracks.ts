@@ -2,6 +2,8 @@
 // Do not edit by hand — re-run the script after re-exporting the playlist.
 
 export interface PlaylistTrack {
+  /** spotify:track:<id> — used to load the track for prev/next skipping. */
+  uri: string;
   name: string;
   artist: string;
   /** Track length in milliseconds — used to match the currently-playing song. */
@@ -11,54 +13,63 @@ export interface PlaylistTrack {
 
 export const playlistTracks: PlaylistTrack[] = [
   {
+    "uri": "spotify:track:23ZArgJyzjrMe1cgNTdZrV",
     "name": "Lo Fi No Lyrics Music",
     "artist": "Lo Fi Hip Hop, Depressing Songs, Sad Music",
     "durationMs": 181150,
     "image": "https://i.scdn.co/image/ab67616d0000b273b4455f1d927d5b4cb7a7eb24"
   },
   {
+    "uri": "spotify:track:1u5sW81bOieK71tMnYFQ6w",
     "name": "Half Awake",
     "artist": "Chillora",
     "durationMs": 153831,
     "image": "https://i.scdn.co/image/ab67616d0000b2734c201f839b58bfb49f9aada7"
   },
   {
+    "uri": "spotify:track:0ry5XqOS3exF1Gq3gyT4X8",
     "name": "september",
     "artist": "NON",
     "durationMs": 128274,
     "image": "https://i.scdn.co/image/ab67616d0000b273e588638fded177564642ac15"
   },
   {
+    "uri": "spotify:track:4UVcaCGUSVS6jLN7eawW0W",
     "name": "Whispers Of The Wind",
     "artist": "HarmonyHush",
     "durationMs": 90000,
     "image": "https://i.scdn.co/image/ab67616d0000b2738d08a6cea4fe3baae6b9b740"
   },
   {
+    "uri": "spotify:track:2y9RcPV6Ly4Wj1J7a0sn8C",
     "name": "Clark Cold",
     "artist": "Chillinois",
     "durationMs": 120395,
     "image": "https://i.scdn.co/image/ab67616d0000b2732b23fd381f2f1293096395aa"
   },
   {
+    "uri": "spotify:track:5GQyFb0NoiwOnGAjEnriZ0",
     "name": "Gratitude",
     "artist": "StreemTunes",
     "durationMs": 115391,
     "image": "https://i.scdn.co/image/ab67616d0000b273b0708a8fcc57dcd0cf40f2db"
   },
   {
+    "uri": "spotify:track:4uxvuERbyhXBWFoZaYw0O4",
     "name": "Brighter Days",
     "artist": "Lofi City",
     "durationMs": 122857,
     "image": "https://i.scdn.co/image/ab67616d0000b2733cdf8ec336ba5080429153b0"
   },
   {
+    "uri": "spotify:track:70ncIQcB2sAlpuNmfbJvk6",
     "name": "gsc",
     "artist": "Casein",
     "durationMs": 130666,
     "image": "https://i.scdn.co/image/ab67616d0000b273e332cd35ce22f58768e0da36"
   },
   {
+    "uri": "spotify:track:1Kcl7PXPRUwO9MRGqyWWZp",
     "name": "Intensa",
     "artist": "PS.KBeats",
     "durationMs": 171219,

@@ -115,7 +115,7 @@ async function main() {
     const artist = (r[iArtist] ?? "").split(";").map((s) => s.trim()).filter(Boolean).join(", ");
     const durationMs = Number(r[iDur]) || 0;
     const image = token ? await fetchArt(id, token) : null;
-    tracks.push({ name, artist, durationMs, image });
+    tracks.push({ uri, name, artist, durationMs, image });
     console.log(`  ✓ ${name} — ${artist} ${image ? "🖼" : ""}`);
   }
 
@@ -123,6 +123,8 @@ async function main() {
 // Do not edit by hand — re-run the script after re-exporting the playlist.
 
 export interface PlaylistTrack {
+  /** spotify:track:<id> — used to load the track for prev/next skipping. */
+  uri: string;
   name: string;
   artist: string;
   /** Track length in milliseconds — used to match the currently-playing song. */

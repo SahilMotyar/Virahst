@@ -12,6 +12,10 @@ export interface MusicControls {
   toggle: () => void;
   /** Seek to a fraction (0–1) of the track. */
   seekRatio: (ratio: number) => void;
+  /** Load + play the next track in the playlist snapshot. */
+  next: () => void;
+  /** Load + play the previous track in the playlist snapshot. */
+  prev: () => void;
 }
 
 interface PlaybackPatch {

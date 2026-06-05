@@ -20,7 +20,7 @@ export function ItemPopover() {
       {item && (
         <motion.div
           key={item.slug}
-          className="pointer-events-none fixed bottom-5 right-5 z-30 hidden w-64 rounded-[18px] bg-white/95 p-4 shadow-[0_1px_2px_rgba(0,0,0,.05),0_12px_32px_rgba(0,0,0,.12)] backdrop-blur sm:block"
+          className="pointer-events-none fixed bottom-20 right-5 z-30 hidden w-64 rounded-[18px] bg-white/95 p-4 shadow-[0_1px_2px_rgba(0,0,0,.05),0_12px_32px_rgba(0,0,0,.12)] backdrop-blur sm:block"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 8 }}

@@ -1,31 +1,30 @@
 "use client";
 
 /**
- * Ambient now-playing bar (brief §8). Loads the Spotify IFrame API, creates a
+ * Ambient now-playing widget (brief §8). Loads the Spotify IFrame API, creates a
  * controller for the configured playlist in a 1px-hidden iframe, and drives a
- * custom bar from its `playback_update` events. Starts paused (browsers block
- * autoplay), remembers the user's start choice in localStorage, and keeps all
- * state in the music store.
+ * custom bottom-left widget from its `playback_update` events.
  *
- * Note: the IFrame API does not expose track title/artist, so the bar shows a
- * fixed ambient label. Richer "what's playing" needs the Web Playback SDK +
- * OAuth — the documented upgrade path, intentionally not built here.
+ * Track metadata (title / artist / artwork) comes from a static snapshot
+ * (src/data/playlistTracks.ts); the playing song is identified by matching its
+ * duration. Prev/next genuinely change track via the controller's loadUri using
+ * the snapshot's URIs. Autoplay is attempted on load (browsers usually block it
+ * until a user gesture — then the user presses play); the choice is remembered
+ * in localStorage. All UI state lives in the music store.
  */
 
 import { useEffect, useRef } from "react";
 import { config } from "@/config";
-import { useMusicStore, type TrackInfo } from "@/store/musicStore";
+import { useMusicStore } from "@/store/musicStore";
 import { playlistTracks } from "@/data/playlistTracks";
 
-/** Identify the playing track by matching its duration against the snapshot. */
-function matchTrack(durationMs: number): TrackInfo | null {
-  for (const t of playlistTracks) {
+/** Index of the playlist track whose duration matches, or -1. */
+function matchIndex(durationMs: number): number {
+  for (let i = 0; i < playlistTracks.length; i++) {
     // Tolerance: the embed's reported duration can differ by a few ms.
-    if (Math.abs(t.durationMs - durationMs) <= 1500) {
-      return { name: t.name, artist: t.artist, image: t.image };
-    }
+    if (Math.abs(playlistTracks[i].durationMs - durationMs) <= 1500) return i;
   }
-  return null;
+  return -1;
 }
 
 // --- Minimal typings for the Spotify IFrame API --------------------------
@@ -43,6 +42,7 @@ interface SpotifyEmbedController {
   resume(): void;
   togglePlay(): void;
   seek(seconds: number): void;
+  loadUri(uri: string): void;
   destroy(): void;
 }
 interface SpotifyIFrameAPI {
@@ -72,8 +72,9 @@ function openUrl(uri: string): string {
 export function MusicBar() {
   const containerRef = useRef<HTMLDivElement>(null);
   const controllerRef = useRef<SpotifyEmbedController | null>(null);
+  const currentIndexRef = useRef(0);
 
-  const { ready, isPaused, position, duration, started } = useMusicStore();
+  const { ready, isPaused, position, duration } = useMusicStore();
   const controls = useMusicStore((s) => s.controls);
   const track = useMusicStore((s) => s.track);
   const setReady = useMusicStore((s) => s.setReady);
@@ -87,10 +88,6 @@ export function MusicBar() {
     const el = containerRef.current;
     if (!el || controllerRef.current) return;
 
-    const wantsAutostart =
-      typeof window !== "undefined" &&
-      window.localStorage.getItem(STORAGE_KEY) === "1";
-
     const onApiReady = (IFrameAPI: SpotifyIFrameAPI) => {
       IFrameAPI.createController(
         el,
@@ -100,14 +97,11 @@ export function MusicBar() {
 
           controller.addListener("ready", () => {
             setReady(true);
-            // Best-effort resume if the user opted in previously (may be
-            // blocked by the browser until a user gesture — that's fine).
-            if (wantsAutostart) {
-              try {
-                controller.resume();
-              } catch {
-                /* autoplay blocked; bar stays paused */
-              }
+            // Attempt autoplay on arrival (usually blocked until a gesture).
+            try {
+              controller.play();
+            } catch {
+              /* autoplay blocked; bar stays paused */
             }
           });
 
@@ -117,25 +111,51 @@ export function MusicBar() {
               position: e.data.position,
               duration: e.data.duration,
             });
-
             // Identify the current track by matching its duration.
-            const info = matchTrack(e.data.duration);
+            const idx = matchIndex(e.data.duration);
+            if (idx >= 0) currentIndexRef.current = idx;
+            const t = idx >= 0 ? playlistTracks[idx] : null;
             const cur = useMusicStore.getState().track;
-            if ((info?.name ?? null) !== (cur?.name ?? null)) setTrack(info);
+            if ((t?.name ?? null) !== (cur?.name ?? null)) {
+              setTrack(t ? { name: t.name, artist: t.artist, image: t.image } : null);
+            }
           });
+
+          const markStarted = () => {
+            if (!useMusicStore.getState().started) setStarted(true);
+            window.localStorage.setItem(STORAGE_KEY, "1");
+          };
+
+          // Load + play a specific track (wrapping the playlist by index).
+          const loadIndex = (idx: number) => {
+            const len = playlistTracks.length;
+            const i = ((idx % len) + len) % len;
+            const t = playlistTracks[i];
+            currentIndexRef.current = i;
+            controller.loadUri(t.uri);
+            // Give the embed a moment to swap tracks, then play.
+            window.setTimeout(() => {
+              try {
+                controller.play();
+              } catch {
+                /* ignore */
+              }
+            }, 400);
+            setTrack({ name: t.name, artist: t.artist, image: t.image });
+            markStarted();
+          };
 
           registerControls({
             toggle: () => {
               controller.togglePlay();
-              if (!useMusicStore.getState().started) {
-                setStarted(true);
-                window.localStorage.setItem(STORAGE_KEY, "1");
-              }
+              markStarted();
             },
-            seekRatio: (ratio) => {
+            seekRatio: (r) => {
               const dur = useMusicStore.getState().duration;
-              if (dur > 0) controller.seek((ratio * dur) / 1000);
+              if (dur > 0) controller.seek((r * dur) / 1000);
             },
+            next: () => loadIndex(currentIndexRef.current + 1),
+            prev: () => loadIndex(currentIndexRef.current - 1),
           });
         },
       );
@@ -159,7 +179,7 @@ export function MusicBar() {
   if (!config.flags.MUSIC_ENABLED) return null;
 
   const ratio = duration > 0 ? Math.min(1, position / duration) : 0;
-  const playing = started && !isPaused;
+  const playing = ready && !isPaused;
   const disabled = !ready || !controls;
 
   const onSeek = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -179,26 +199,31 @@ export function MusicBar() {
 
       <div className="fixed bottom-5 left-5 z-40 w-80 max-w-[calc(100vw-2.5rem)]">
         <div className="relative flex items-center rounded-[22px] border border-black/5 bg-bg/95 py-3 pl-24 pr-4 shadow-[0_1px_2px_rgba(0,0,0,.05),0_14px_36px_rgba(0,0,0,.14)] backdrop-blur">
-          {/* Album disc — real cover when matched, else gradient. Spins slowly
-              while playing (vinyl-style); still when paused. */}
+          {/* Album disc. Outer scales up slightly when playing; inner spins. */}
           <div
-            className="absolute -top-3 left-3.5 h-20 w-20 overflow-hidden rounded-full shadow-[0_10px_24px_rgba(0,0,0,.28)]"
-            style={playing ? { animation: "virasat-spin 18s linear infinite" } : undefined}
+            className="absolute -top-3 left-3.5 h-20 w-20"
+            style={{
+              transform: playing ? "scale(1.08)" : "scale(1)",
+              transition: "transform 0.3s ease",
+            }}
           >
-            {track?.image ? (
-              // eslint-disable-next-line @next/next/no-img-element -- remote Spotify CDN art; next/image config not needed for an 80px thumb.
-              <img
-                src={track.image}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-accent to-indigo font-display text-3xl text-bg">
-                ♪
-              </div>
-            )}
-            {/* Centre spindle hole for the record feel. */}
-            <span className="absolute left-1/2 top-1/2 h-2.5 w-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-bg/80 shadow-inner" />
+            <div
+              className="h-full w-full overflow-hidden rounded-full shadow-[0_10px_24px_rgba(0,0,0,.28)]"
+              style={playing ? { animation: "virasat-spin 8s linear infinite" } : undefined}
+            >
+              {track?.image ? (
+                // eslint-disable-next-line @next/next/no-img-element -- remote Spotify CDN art; next/image config not needed for an 80px thumb.
+                <img
+                  src={track.image}
+                  alt=""
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-accent to-indigo font-display text-3xl text-bg">
+                  ♪
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex min-w-0 flex-1 flex-col gap-2">
@@ -225,8 +250,21 @@ export function MusicBar() {
               </a>
             </div>
 
-            {/* Controls row: play/pause + progress */}
-            <div className="flex items-center gap-2.5">
+            {/* Controls row: prev · play/pause · next · progress */}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label="Previous track"
+                disabled={disabled}
+                onClick={() => controls?.prev()}
+                className="shrink-0 text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M7 6a1 1 0 0 0-2 0v12a1 1 0 0 0 2 0V6Z" />
+                  <path d="M20 5.5v13a1 1 0 0 1-1.5.87l-9-6.5a1 1 0 0 1 0-1.74l9-6.5A1 1 0 0 1 20 5.5Z" />
+                </svg>
+              </button>
+
               <button
                 type="button"
                 aria-label={playing ? "Pause" : "Play ambient music"}
@@ -246,6 +284,19 @@ export function MusicBar() {
                 )}
               </button>
 
+              <button
+                type="button"
+                aria-label="Next track"
+                disabled={disabled}
+                onClick={() => controls?.next()}
+                className="shrink-0 text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M17 6a1 1 0 0 1 2 0v12a1 1 0 0 1-2 0V6Z" />
+                  <path d="M4 5.5v13a1 1 0 0 0 1.5.87l9-6.5a1 1 0 0 0 0-1.74l-9-6.5A1 1 0 0 0 4 5.5Z" />
+                </svg>
+              </button>
+
               <div
                 role="slider"
                 aria-label="Seek"
@@ -254,7 +305,7 @@ export function MusicBar() {
                 aria-valuenow={Math.round(ratio * 100)}
                 tabIndex={0}
                 onClick={onSeek}
-                className="relative h-1.5 flex-1 cursor-pointer rounded-full bg-black/10"
+                className="relative ml-1 h-1.5 flex-1 cursor-pointer rounded-full bg-black/10"
               >
                 <div
                   className="absolute inset-y-0 left-0 rounded-full bg-accent"

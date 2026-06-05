@@ -7,7 +7,7 @@
  */
 
 import { useCameraStore } from "@/store/cameraStore";
-import { ZOOM_STEP, config } from "@/config";
+import { ZOOM_STEP } from "@/config";
 
 export function ZoomControls() {
   const scale = useCameraStore((s) => s.scale);
@@ -15,11 +15,7 @@ export function ZoomControls() {
   const percent = Math.round(scale * 100);
 
   return (
-    <div
-      className={`fixed left-5 z-30 flex items-center gap-1 rounded-full bg-white/90 px-1.5 py-1 shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.06)] backdrop-blur ${
-        config.flags.MUSIC_ENABLED ? "bottom-24" : "bottom-5"
-      }`}
-    >
+    <div className="fixed bottom-5 right-5 z-30 flex items-center gap-1 rounded-full bg-white/90 px-1.5 py-1 shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.06)] backdrop-blur">
       <button
         type="button"
         aria-label="Zoom out"
