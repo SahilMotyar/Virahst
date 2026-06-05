@@ -11,6 +11,7 @@ import { memo, useState } from "react";
 import { ITEM_W, ITEM_H, config } from "@/config";
 import type { VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
+import { useUIStore } from "@/store/uiStore";
 
 interface CanvasItemProps {
   item: VintageItem;
@@ -23,6 +24,7 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
   // placeholder directly. With assets present, attempt load and fall back on error.
   const [errored, setErrored] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const setHovered = useUIStore((s) => s.setHovered);
   const showImage = config.flags.ASSETS_PRESENT && Boolean(item.image) && !errored;
 
   return (
@@ -34,9 +36,11 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
         width: ITEM_W,
         contentVisibility: "auto",
       }}
+      onMouseEnter={() => setHovered(item.slug)}
+      onMouseLeave={() => setHovered(null)}
     >
       <div
-        className="relative w-full overflow-hidden rounded-[14px]"
+        className="relative w-full overflow-hidden rounded-[14px] transition-transform duration-200 ease-out group-hover:scale-[1.04]"
         style={{
           height: ITEM_H,
           // box-shadow (vs filter: drop-shadow) is far cheaper to composite

@@ -64,19 +64,24 @@ export const MOMENTUM_DECAY = 0.92;
 
 /**
  * Reserved empty rectangle of cells (inclusive) in the centre of the grid.
- * The hero block is rendered here so it pans/zooms with the canvas.
+ * The hero block is rendered here so it pans/zooms with the canvas. Kept snug
+ * around the title so the surrounding cards don't feel marooned.
  */
 export const HERO_HOLE = {
-  minCol: -3,
-  maxCol: 3,
+  minCol: -2,
+  maxCol: 2,
   minRow: -1,
-  maxRow: 2,
+  maxRow: 1,
 } as const;
 
-/** World-space centre of the hero hole (camera focuses here on load). */
+/**
+ * World-space centre of the hero hole. Item centres sit at (cell + 0.5) * CELL,
+ * so the hole's true centre is the mid cell plus half a cell — getting this
+ * right is what puts the title in the middle of the empty band.
+ */
 export const HERO_CENTER = {
-  x: ((HERO_HOLE.minCol + HERO_HOLE.maxCol) / 2) * CELL_W,
-  y: ((HERO_HOLE.minRow + HERO_HOLE.maxRow) / 2) * CELL_H,
+  x: ((HERO_HOLE.minCol + HERO_HOLE.maxCol) / 2 + 0.5) * CELL_W,
+  y: ((HERO_HOLE.minRow + HERO_HOLE.maxRow) / 2 + 0.5) * CELL_H,
 } as const;
 
 /**

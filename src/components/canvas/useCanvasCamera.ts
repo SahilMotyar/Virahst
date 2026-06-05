@@ -3,15 +3,21 @@
 /**
  * Hand-rolled pan/zoom/momentum camera for the infinite canvas.
  *
- * Performance model (brief §4.7): the live transform lives in a mutable ref and
- * is written directly to the layer's style every frame — React never re-renders
- * on pointermove. The store is touched only when it matters:
- *   • the visible cell range changes (→ items mount/unmount), or
- *   • the zoom scale changes (→ throttled readout update).
- * Panning within the same cell range triggers zero React renders.
+ * Performance model (brief §4.7):
+ *   • The live transform lives in a mutable ref and is written directly to the
+ *     layer's style — React never re-renders on pointermove.
+ *   • Pan/zoom updates are coalesced into a single requestAnimationFrame, so
+ *     multiple input events per frame produce at most one transform write.
+ *   • Viewport dimensions are cached (read only on init/resize) so we never read
+ *     layout right after writing it — that read-after-write forces a synchronous
+ *     reflow every frame and is the classic source of pan jank.
+ *   • The store is touched only when the visible cell range changes (→ mount /
+ *     unmount) or the zoom scale changes (→ throttled readout). Panning within a
+ *     range triggers zero React renders.
  *
  * Pointer Events cover mouse + touch (incl. two-finger pinch); wheel handles
- * trackpad pan and ctrl/⌘ zoom.
+ * trackpad pan and ctrl/⌘ zoom. `onReady` fires once the camera is centred, so
+ * Canvas can fade the field in instead of flashing an un-centred SSR frame.
  */
 
 import { useEffect, useRef, type RefObject } from "react";
@@ -23,9 +29,13 @@ import {
   HERO_CENTER,
   CELL_W,
   CELL_H,
+  ITEM_W,
+  ITEM_H,
   OVERSCAN,
 } from "@/config";
 import { useCameraStore, type CellRange } from "@/store/cameraStore";
+import { cellToWorld, isRenderableCell, itemIndexForCell } from "@/lib/grid";
+import { items } from "@/data/items";
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
@@ -34,6 +44,10 @@ const clamp = (v: number, lo: number, hi: number) =>
 const MIN_VELOCITY = 0.05;
 /** How often (ms) to push the scale readout into the store. */
 const SCALE_INTERVAL = 60;
+/** Pointer travel (px) under which a press counts as a tap, not a drag. */
+const TAP_SLOP = 6;
+/** Max press duration (ms) for a tap. */
+const TAP_TIME = 500;
 
 interface Cam {
   x: number;
@@ -44,6 +58,8 @@ interface Cam {
 export function useCanvasCamera(
   containerRef: RefObject<HTMLDivElement | null>,
   layerRef: RefObject<HTMLDivElement | null>,
+  onReady?: () => void,
+  onTapItem?: (slug: string) => void,
 ) {
   // Live truth — never triggers a React render.
   const cam = useRef<Cam>({ x: 0, y: 0, scale: INITIAL_SCALE });
@@ -62,6 +78,10 @@ export function useCanvasCamera(
       "(prefers-reduced-motion: reduce)",
     ).matches;
 
+    // Cached viewport dimensions — never read during a pan (avoids reflow).
+    let viewW = container.clientWidth || window.innerWidth;
+    let viewH = container.clientHeight || window.innerHeight;
+
     // --- live transform application ------------------------------------
     const apply = () => {
       const { x, y, scale } = cam.current;
@@ -71,14 +91,12 @@ export function useCanvasCamera(
     // --- sync visible cell range (only on change → rare re-render) ------
     let lastRange: CellRange = { minCol: 0, maxCol: -1, minRow: 0, maxRow: -1 };
     const syncRange = () => {
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      if (w === 0 || h === 0) return;
+      if (viewW === 0 || viewH === 0) return;
       const { x, y, scale } = cam.current;
       const leftWorld = (0 - x) / scale - OVERSCAN;
       const topWorld = (0 - y) / scale - OVERSCAN;
-      const rightWorld = (w - x) / scale + OVERSCAN;
-      const bottomWorld = (h - y) / scale + OVERSCAN;
+      const rightWorld = (viewW - x) / scale + OVERSCAN;
+      const bottomWorld = (viewH - y) / scale + OVERSCAN;
       const next: CellRange = {
         minCol: Math.floor(leftWorld / CELL_W),
         maxCol: Math.ceil(rightWorld / CELL_W),
@@ -108,20 +126,32 @@ export function useCanvasCamera(
       setScale(cam.current.scale);
     };
 
+    // --- coalesce input → at most one transform write per frame --------
+    let framePending = false;
+    const scheduleFrame = () => {
+      if (framePending) return;
+      framePending = true;
+      requestAnimationFrame(() => {
+        framePending = false;
+        apply();
+        syncRange();
+      });
+    };
+
     // --- initial framing: centre the hero hole -------------------------
     if (!initialised.current) {
-      const rect = container.getBoundingClientRect();
       const scale = INITIAL_SCALE;
       cam.current = {
         scale,
-        x: rect.width / 2 - HERO_CENTER.x * scale,
-        y: rect.height / 2 - HERO_CENTER.y * scale,
+        x: viewW / 2 - HERO_CENTER.x * scale,
+        y: viewH / 2 - HERO_CENTER.y * scale,
       };
       initialised.current = true;
     }
     apply();
     syncRange();
     syncScale(true);
+    onReady?.();
 
     // --- momentum loop -------------------------------------------------
     const velocity = { x: 0, y: 0 };
@@ -158,9 +188,29 @@ export function useCanvasCamera(
         x: cx - worldX * newScale,
         y: cy - worldY * newScale,
       };
-      apply();
-      syncRange();
+      scheduleFrame();
       syncScale();
+    };
+
+    // --- tap hit-test: world point → cell → item slug ------------------
+    const tapItemAt = (clientX: number, clientY: number) => {
+      if (!onTapItem) return;
+      const rect = container.getBoundingClientRect();
+      const { x, y, scale } = cam.current;
+      const worldX = (clientX - rect.left - x) / scale;
+      const worldY = (clientY - rect.top - y) / scale;
+      const col = Math.floor(worldX / CELL_W);
+      const row = Math.floor(worldY / CELL_H);
+      if (!isRenderableCell(col, row)) return;
+      const { x: ix, y: iy } = cellToWorld(col, row);
+      if (
+        worldX >= ix &&
+        worldX <= ix + ITEM_W &&
+        worldY >= iy &&
+        worldY <= iy + ITEM_H
+      ) {
+        onTapItem(items[itemIndexForCell(col, row, items.length)].slug);
+      }
     };
 
     // --- pointer (pan + pinch) -----------------------------------------
@@ -168,6 +218,9 @@ export function useCanvasCamera(
     let dragging = false;
     let last = { x: 0, y: 0, t: 0 };
     let pinchDist = 0;
+    // Tap tracking (to tell a click from a drag).
+    let tapStart = { x: 0, y: 0, t: 0 };
+    let movedFar = false;
 
     const onPointerDown = (e: PointerEvent) => {
       stopMomentum();
@@ -176,6 +229,8 @@ export function useCanvasCamera(
       if (pointers.size === 1) {
         dragging = true;
         last = { x: e.clientX, y: e.clientY, t: performance.now() };
+        tapStart = { x: e.clientX, y: e.clientY, t: performance.now() };
+        movedFar = false;
         velocity.x = 0;
         velocity.y = 0;
         container.style.cursor = "grabbing";
@@ -215,8 +270,13 @@ export function useCanvasCamera(
       velocity.x = (dx / dt) * 16;
       velocity.y = (dy / dt) * 16;
       last = { x: e.clientX, y: e.clientY, t: now };
-      apply();
-      syncRange();
+      if (
+        !movedFar &&
+        Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) > TAP_SLOP
+      ) {
+        movedFar = true;
+      }
+      scheduleFrame();
     };
 
     const endPointer = (e: PointerEvent) => {
@@ -230,11 +290,16 @@ export function useCanvasCamera(
         if (dragging) {
           dragging = false;
           container.style.cursor = "grab";
-          // Flick → momentum (skipped under reduced-motion).
-          if (
+          const isTap =
+            !movedFar && performance.now() - tapStart.t < TAP_TIME;
+          if (isTap) {
+            // A click/tap on an item opens its detail; no momentum.
+            tapItemAt(e.clientX, e.clientY);
+          } else if (
             !reducedMotion &&
             Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY
           ) {
+            // Flick → momentum (skipped under reduced-motion).
             stopMomentum();
             momentumRAF = requestAnimationFrame(momentumStep);
           }
@@ -251,16 +316,15 @@ export function useCanvasCamera(
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       stopMomentum();
-      const rect = container.getBoundingClientRect();
       if (e.ctrlKey || e.metaKey) {
         // Pinch-to-zoom on macOS arrives as ctrl+wheel.
+        const rect = container.getBoundingClientRect();
         const factor = Math.exp(-e.deltaY * 0.01);
         zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor);
       } else {
         cam.current.x -= e.deltaX;
         cam.current.y -= e.deltaY;
-        apply();
-        syncRange();
+        scheduleFrame();
       }
     };
 
@@ -275,14 +339,15 @@ export function useCanvasCamera(
     registerControls({
       zoomByCenter: (factor: number) => {
         stopMomentum();
-        const rect = container.getBoundingClientRect();
-        zoomAt(rect.width / 2, rect.height / 2, factor);
+        zoomAt(viewW / 2, viewH / 2, factor);
         syncScale(true);
       },
     });
 
-    // --- re-frame / re-measure on resize -------------------------------
+    // --- re-measure + re-frame on resize -------------------------------
     const onResize = () => {
+      viewW = container.clientWidth;
+      viewH = container.clientHeight;
       apply();
       syncRange();
     };
@@ -298,5 +363,13 @@ export function useCanvasCamera(
       window.removeEventListener("resize", onResize);
       registerControls(null);
     };
-  }, [containerRef, layerRef, setScale, setRange, registerControls]);
+  }, [
+    containerRef,
+    layerRef,
+    setScale,
+    setRange,
+    registerControls,
+    onReady,
+    onTapItem,
+  ]);
 }

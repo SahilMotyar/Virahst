@@ -20,7 +20,7 @@ export function HeroBlock() {
         width: 560,
       }}
     >
-      <h1 className="font-display text-[88px] leading-[0.95] font-semibold tracking-tight text-ink">
+      <h1 className="font-hero text-[96px] leading-[1.05] tracking-tight text-ink">
         {config.heroTitle}
       </h1>
       <p className="mt-4 text-xs uppercase text-ink-2" style={{ letterSpacing: "0.35em" }}>

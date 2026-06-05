@@ -21,6 +21,7 @@
   --color-indigo: var(--indigo);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-display-devanagari), Georgia, serif;
+  --font-hero: var(--font-hero-devanagari), var(--font-display-devanagari), serif;
 }
 
 html,
