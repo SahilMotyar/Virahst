@@ -5,6 +5,7 @@
 
 import Link from "next/link";
 import { config } from "@/config";
+import { SignInButton } from "@/components/auth/SignInButton";
 
 const LINKS = [
   { label: "Collection", href: "/collection" },
@@ -37,12 +38,7 @@ export function TopNav() {
         ))}
       </div>
 
-      <button
-        type="button"
-        className="rounded-full bg-ink px-5 py-2 text-sm font-medium text-bg transition-colors hover:bg-black"
-      >
-        Sign In
-      </button>
+      <SignInButton />
     </nav>
   );
 }

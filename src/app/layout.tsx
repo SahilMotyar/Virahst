@@ -26,8 +26,14 @@ const modak = Modak({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(config.siteUrl),
   title: `${config.brand} — ${config.heroSubtitle}`,
   description: config.tagline,
+  openGraph: {
+    title: `${config.brand} — ${config.heroSubtitle}`,
+    description: config.tagline,
+    type: "website",
+  },
 };
 
 export default function RootLayout({

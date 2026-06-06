@@ -7,11 +7,18 @@
  */
 
 import Link from "next/link";
+import { useState } from "react";
 import { config, HERO_CENTER } from "@/config";
 import { brandCount, productCount } from "@/data/items";
+import { Modal } from "@/components/ui/Modal";
+
+type InfoModal = "how" | "why" | null;
 
 export function HeroBlock() {
+  const [info, setInfo] = useState<InfoModal>(null);
+
   return (
+    <>
     <div
       className="absolute flex flex-col items-center text-center"
       style={{
@@ -51,12 +58,14 @@ export function HeroBlock() {
         <div className="flex items-center gap-3">
           <button
             type="button"
+            onClick={() => setInfo("how")}
             className="rounded-full bg-white px-4 py-2 text-xs font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05)] transition-colors hover:text-ink"
           >
             How it works
           </button>
           <button
             type="button"
+            onClick={() => setInfo("why")}
             className="rounded-full bg-white px-4 py-2 text-xs font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05)] transition-colors hover:text-ink"
           >
             Why this exists
@@ -68,5 +77,46 @@ export function HeroBlock() {
         by {config.handle}
       </p>
     </div>
+
+      <Modal
+        open={info === "how"}
+        onClose={() => setInfo(null)}
+        eyebrow="How it works"
+        title="A canvas, not a catalogue"
+      >
+        <p>
+          Drag to roam the canvas, scroll or pinch to zoom, and let the field of
+          old packaging drift past like a market stall at dusk. Tap any object to
+          open its card — each one carries the original advertising it once ran:
+          the tagline, the medium, the era.
+        </p>
+        <p className="mt-3">
+          Prefer a tidy list? The{" "}
+          <Link href="/collection" className="text-accent underline-offset-2 hover:underline">
+            collection
+          </Link>{" "}
+          view lets you search, filter and sort the same archive.
+        </p>
+      </Modal>
+
+      <Modal
+        open={info === "why"}
+        onClose={() => setInfo(null)}
+        eyebrow="Why this exists"
+        title="The everyday, treated like art"
+      >
+        <p>
+          The packaging, posters and jingles India grew up with were designed to
+          be thrown away — yet they shaped how a country remembers itself.
+          {" "}
+          {config.brand} collects that everyday design and hangs it in a quiet,
+          pannable gallery, with the advertising history kept as the label.
+        </p>
+        <p className="mt-3 text-xs text-ink-2/70">
+          Images and ad copy here are placeholders — real, properly-sourced
+          archival material gets added over time.
+        </p>
+      </Modal>
+    </>
   );
 }

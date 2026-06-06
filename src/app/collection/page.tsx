@@ -7,6 +7,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { CollectionBrowser } from "@/components/collection/CollectionBrowser";
+import { ChatPanel } from "@/components/chat/ChatPanel";
 import { config } from "@/config";
 import { productCount } from "@/data/items";
 
@@ -30,6 +31,7 @@ export default function CollectionPage() {
       </header>
 
       <CollectionBrowser />
+      <ChatPanel />
     </main>
   );
 }

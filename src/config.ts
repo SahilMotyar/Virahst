@@ -12,6 +12,8 @@ export const config = {
   /** Wide-tracked grey uppercase subtitle under the title. */
   heroSubtitle: "THE INDIAN VINTAGE ARCHIVE",
   tagline: "The everyday things India advertised, collected like art.",
+  /** Absolute site URL — used as metadataBase so OG/Twitter URLs resolve. */
+  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "https://virasat.netlify.app",
   /** Logo glyph shown in the rounded-square mark. */
   logoGlyph: "वि",
   /** Credit line in the hero block. */
