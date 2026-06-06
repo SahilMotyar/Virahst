@@ -15,6 +15,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCameraStore } from "@/store/cameraStore";
+import { useUIStore } from "@/store/uiStore";
 import { useCanvasCamera } from "@/components/canvas/useCanvasCamera";
 import { useVirtualization } from "@/components/canvas/useVirtualization";
 import { CanvasItem } from "@/components/canvas/CanvasItem";
@@ -29,7 +30,12 @@ export function Canvas() {
 
   const onReady = useCallback(() => setReady(true), []);
   const onTapItem = useCallback(
-    (slug: string) => router.push(`/item/${slug}`),
+    (slug: string) => {
+      // Clear the hover preview before navigating so nothing is mid-unmount
+      // during the route transition.
+      useUIStore.getState().setHovered(null);
+      router.push(`/item/${slug}`);
+    },
     [router],
   );
   useCanvasCamera(containerRef, layerRef, onReady, onTapItem);
