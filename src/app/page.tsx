@@ -4,7 +4,7 @@ import { ItemPopover } from "@/components/item/ItemPopover";
 
 export default function Home() {
   return (
-    <main className="fixed inset-0 overflow-hidden">
+    <main className="fixed inset-0 overflow-hidden" translate="no">
       <Canvas />
       <ZoomControls />
       <ItemPopover />

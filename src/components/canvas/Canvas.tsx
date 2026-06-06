@@ -40,6 +40,10 @@ export function Canvas() {
   return (
     <div
       ref={containerRef}
+      // translate="no": the canvas re-renders constantly as it pans, so letting
+      // a page-translator (Google Translate) rewrite text nodes here makes React
+      // reconciliation crash with insertBefore/removeChild errors.
+      translate="no"
       className="canvas-no-select absolute inset-0 touch-none overflow-hidden bg-canvas"
       aria-label="Vintage archive canvas. Drag to pan, scroll or pinch to zoom."
       role="application"
