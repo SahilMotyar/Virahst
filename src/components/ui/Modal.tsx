@@ -3,11 +3,11 @@
 /**
  * Generic controlled modal dialog (backdrop, centered card, close button).
  * Closes on Escape, backdrop click, or the ✕. Locks body scroll while open and
- * animates with motion, honouring prefers-reduced-motion. Shared by the Sign In
- * stub and the hero info modals.
+ * animates with motion, honouring prefers-reduced-motion. Used by the hero info
+ * modals.
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -20,14 +20,22 @@ interface ModalProps {
   children: React.ReactNode;
 }
 
+// Hydration-safe client-mount detection (false on server, true on client) —
+// avoids running createPortal during SSR without a setState-in-effect.
+const subscribe = () => () => {};
+function useMounted() {
+  return useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
+}
+
 export function Modal({ open, onClose, eyebrow, title, children }: ModalProps) {
   const reduce = useReducedMotion();
   // Portal to body so the modal escapes any transformed ancestor (the canvas
   // layer uses `transform`, which would otherwise trap `position: fixed`).
-  const [mounted, setMounted] = useState(false);
-  // Standard client-only mount guard so createPortal never runs during SSR.
-  // eslint-disable-next-line react-hooks/set-state-in-effect
-  useEffect(() => setMounted(true), []);
+  const mounted = useMounted();
 
   useEffect(() => {
     if (!open) return;
@@ -54,11 +62,11 @@ export function Modal({ open, onClose, eyebrow, title, children }: ModalProps) {
           initial={reduce ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          role="dialog"
-          aria-modal="true"
-          aria-label={title}
         >
           <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
             className="relative w-full max-w-md rounded-[22px] bg-bg p-7 shadow-[0_1px_2px_rgba(0,0,0,.05),0_24px_70px_rgba(0,0,0,.25)] sm:p-8"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, y: 14, scale: 0.985 }}
@@ -70,7 +78,7 @@ export function Modal({ open, onClose, eyebrow, title, children }: ModalProps) {
               type="button"
               aria-label="Close"
               onClick={onClose}
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-black/[0.04] hover:text-ink"
+              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-black/4 hover:text-ink"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M18 6 6 18M6 6l12 12" />

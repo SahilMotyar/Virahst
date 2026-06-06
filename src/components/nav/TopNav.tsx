@@ -5,7 +5,6 @@
 
 import Link from "next/link";
 import { config } from "@/config";
-import { SignInButton } from "@/components/auth/SignInButton";
 
 const LINKS = [
   { label: "Collection", href: "/collection" },
@@ -38,7 +37,8 @@ export function TopNav() {
         ))}
       </div>
 
-      <SignInButton />
+      {/* Right-side spacer keeps the nav links visually centred. */}
+      <div aria-hidden className="w-20" />
     </nav>
   );
 }
