@@ -38,11 +38,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-  modal,
 }: Readonly<{
   children: React.ReactNode;
-  /** Parallel route slot for the intercepted item modal. */
-  modal: React.ReactNode;
 }>) {
   return (
     <html
@@ -55,7 +52,6 @@ export default function RootLayout({
       <body className="min-h-full">
         <TopNav />
         {children}
-        {modal}
         <MusicBar />
       </body>
     </html>
