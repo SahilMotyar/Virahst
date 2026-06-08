@@ -34,6 +34,12 @@ export const metadata: Metadata = {
     description: config.tagline,
     type: "website",
   },
+  // Tells Chrome's auto-translate to leave the DOM alone. Google Translate
+  // rewrites text nodes (wrapping them in <font> tags) after hydration; React
+  // then can't find the nodes it owns and crashes the whole app with
+  // insertBefore/removeChild errors on the next commit (e.g. a click). The
+  // matching translate="no" on <body> covers other translation engines.
+  other: { google: "notranslate" },
 };
 
 export default function RootLayout({
@@ -49,7 +55,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${inter.variable} ${mukta.variable} ${modak.variable} h-full antialiased`}
     >
-      <body className="min-h-full">
+      {/* translate="no" app-wide: external page translators (and some
+          extensions) inject/wrap DOM nodes that React owns. On the next commit
+          React fails to find them and throws insertBefore/removeChild, which —
+          with no error boundary — crashed the whole page. Keeping the whole
+          tree out of translation prevents the crash at the source. */}
+      <body className="min-h-full" translate="no">
         <TopNav />
         {children}
         <MusicBar />
