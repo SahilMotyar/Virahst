@@ -119,6 +119,9 @@ async function searchCommons(query, n) {
     .map((p) => {
       const info = p.imageinfo?.[0];
       if (!info?.thumburl) return null;
+      // Commons renders PDF/DjVu (scanned books, newspapers) as JPG thumbs;
+      // those match on OCR text and are almost never the product shot we want.
+      if (!(info.mime ?? "").startsWith("image/")) return null;
       const meta = info.extmetadata ?? {};
       return {
         source: "wikimedia-commons",

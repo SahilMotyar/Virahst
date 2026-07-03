@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "gen:playlist": "node scripts/gen-playlist.mjs"
+    "gen:playlist": "node scripts/gen-playlist.mjs",
+    "fetch:assets": "node --experimental-strip-types scripts/fetch-assets.mjs"
   },
   "dependencies": {
     "motion": "^12.40.0",
