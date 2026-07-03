@@ -32,6 +32,8 @@ import {
   ITEM_W,
   ITEM_H,
   OVERSCAN,
+  GRID_BOUNDS,
+  config,
 } from "@/config";
 import { useCameraStore, type CellRange } from "@/store/cameraStore";
 import { cellToWorld, isRenderableCell, itemIndexForCell } from "@/lib/grid";
@@ -48,6 +50,16 @@ const SCALE_INTERVAL = 60;
 const TAP_SLOP = 6;
 /** Max press duration (ms) for a tap. */
 const TAP_TIME = 500;
+
+/** World-space extents of the finite item field (used for pan clamping). */
+const FIELD = {
+  x0: GRID_BOUNDS.minCol * CELL_W,
+  x1: (GRID_BOUNDS.maxCol + 1) * CELL_W,
+  y0: GRID_BOUNDS.minRow * CELL_H,
+  y1: (GRID_BOUNDS.maxRow + 1) * CELL_H,
+};
+/** Min screen px of the field that must stay visible on each axis. */
+const EDGE_MARGIN = 160;
 
 interface Cam {
   x: number;
@@ -82,10 +94,37 @@ export function useCanvasCamera(
     let viewW = container.clientWidth || window.innerWidth;
     let viewH = container.clientHeight || window.innerHeight;
 
+    // --- pan clamp (finite field only) ----------------------------------
+    // Keeps at least EDGE_MARGIN px of the field on screen per axis; when the
+    // field is smaller than the viewport at the current scale, centres it.
+    const clampCam = () => {
+      if (config.flags.INFINITE_WRAP) return;
+      const { scale } = cam.current;
+      const loX = EDGE_MARGIN - FIELD.x1 * scale;
+      const hiX = viewW - EDGE_MARGIN - FIELD.x0 * scale;
+      const loY = EDGE_MARGIN - FIELD.y1 * scale;
+      const hiY = viewH - EDGE_MARGIN - FIELD.y0 * scale;
+      cam.current.x = loX > hiX ? (loX + hiX) / 2 : clamp(cam.current.x, loX, hiX);
+      cam.current.y = loY > hiY ? (loY + hiY) / 2 : clamp(cam.current.y, loY, hiY);
+    };
+
     // --- live transform application ------------------------------------
     const apply = () => {
+      clampCam();
       const { x, y, scale } = cam.current;
       layer.style.transform = `translate3d(${x}px, ${y}px, 0) scale(${scale})`;
+    };
+
+    // --- hover suspension during pan -------------------------------------
+    // While dragging (and during a momentum glide) the canvas slides under a
+    // stationary cursor, which would otherwise fire mouseenter/mouseleave on
+    // every item that passes by — hover-state churn, popover mounts and CSS
+    // hover transitions mid-pan are a big part of pan jank. Disabling pointer
+    // events on the layer suspends all of that; the container (which owns the
+    // pan listeners) is unaffected, and hover resumes on the next mouse move
+    // after the canvas settles.
+    const setLayerInteractive = (on: boolean) => {
+      layer.style.pointerEvents = on ? "" : "none";
     };
 
     // --- sync visible cell range (only on change → rare re-render) ------
@@ -167,12 +206,19 @@ export function useCanvasCamera(
       velocity.y *= MOMENTUM_DECAY;
       cam.current.x += velocity.x;
       cam.current.y += velocity.y;
+      const freeX = cam.current.x;
+      const freeY = cam.current.y;
       apply();
+      // apply() clamps; if an axis got pinned to the field edge, stop
+      // pushing along it so the glide doesn't grind against the boundary.
+      if (cam.current.x !== freeX) velocity.x = 0;
+      if (cam.current.y !== freeY) velocity.y = 0;
       syncRange();
       if (Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY) {
         momentumRAF = requestAnimationFrame(momentumStep);
       } else {
         momentumRAF = 0;
+        setLayerInteractive(true);
       }
     };
 
@@ -234,6 +280,7 @@ export function useCanvasCamera(
         velocity.x = 0;
         velocity.y = 0;
         container.style.cursor = "grabbing";
+        setLayerInteractive(false);
       } else if (pointers.size === 2) {
         dragging = false;
         const pts = [...pointers.values()];
@@ -294,14 +341,19 @@ export function useCanvasCamera(
             !movedFar && performance.now() - tapStart.t < TAP_TIME;
           if (isTap) {
             // A click/tap on an item opens its detail; no momentum.
+            setLayerInteractive(true);
             tapItemAt(e.clientX, e.clientY);
           } else if (
             !reducedMotion &&
             Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY
           ) {
-            // Flick → momentum (skipped under reduced-motion).
+            // Flick → momentum (skipped under reduced-motion). The layer
+            // stays non-interactive until the glide settles (momentumStep
+            // restores it).
             stopMomentum();
             momentumRAF = requestAnimationFrame(momentumStep);
+          } else {
+            setLayerInteractive(true);
           }
         }
       } else if (pointers.size === 1) {
@@ -355,6 +407,7 @@ export function useCanvasCamera(
 
     return () => {
       stopMomentum();
+      layer.style.pointerEvents = "";
       container.removeEventListener("pointerdown", onPointerDown);
       container.removeEventListener("pointermove", onPointerMove);
       container.removeEventListener("pointerup", endPointer);

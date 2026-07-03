@@ -92,20 +92,50 @@ export function MusicBar() {
     const el = containerRef.current;
     if (!el || controllerRef.current) return;
 
+    let cancelled = false;
+
+    // Sacrificial host node. The IFrame API *replaces* the element it is given
+    // with its own <iframe> (targetElement.parentElement.replaceChild(...)),
+    // so it must never receive a React-owned node: React keeps referencing the
+    // detached node, and the next route transition then crashes with
+    // "insertBefore/removeChild … is not a child of this node". The API only
+    // ever swaps this throwaway div; React only knows the stable container.
+    const host = document.createElement("div");
+    el.appendChild(host);
+
     const onApiReady = (IFrameAPI: SpotifyIFrameAPI) => {
+      if (cancelled) return;
       IFrameAPI.createController(
-        el,
+        host,
         { uri: config.spotifyPlaylistUri, width: "1", height: "1" },
         (controller) => {
+          if (cancelled) {
+            try {
+              controller.destroy();
+            } catch {
+              /* embed already torn down */
+            }
+            return;
+          }
           controllerRef.current = controller;
 
           controller.addListener("ready", () => {
             setReady(true);
-            // Attempt autoplay on arrival (usually blocked until a gesture).
+            // Resume automatically only if the user chose to play music on a
+            // previous visit (the flag markStarted writes). Cold autoplay is
+            // blocked by browsers anyway, so first-timers start paused.
+            let autostart = false;
             try {
-              controller.play();
+              autostart = window.localStorage.getItem(STORAGE_KEY) === "1";
             } catch {
-              /* autoplay blocked; bar stays paused */
+              /* storage unavailable; stay paused */
+            }
+            if (autostart) {
+              try {
+                controller.play();
+              } catch {
+                /* autoplay blocked; bar stays paused */
+              }
             }
           });
 
@@ -127,7 +157,11 @@ export function MusicBar() {
 
           const markStarted = () => {
             if (!useMusicStore.getState().started) setStarted(true);
-            window.localStorage.setItem(STORAGE_KEY, "1");
+            try {
+              window.localStorage.setItem(STORAGE_KEY, "1");
+            } catch {
+              /* storage unavailable; autostart just won't persist */
+            }
           };
 
           // Load + play a specific track (wrapping the playlist by index).
@@ -176,7 +210,20 @@ export function MusicBar() {
     }
 
     return () => {
+      cancelled = true;
       registerControls(null);
+      if (window.onSpotifyIframeApiReady === onApiReady) {
+        window.onSpotifyIframeApiReady = undefined;
+      }
+      try {
+        controllerRef.current?.destroy();
+      } catch {
+        /* embed already torn down */
+      }
+      controllerRef.current = null;
+      // Drop whatever the embed left inside the container (host div or its
+      // replacement iframe) so a re-run of the effect starts clean.
+      el.replaceChildren();
     };
   }, [setReady, setPlayback, setStarted, setTrack, registerControls]);
 

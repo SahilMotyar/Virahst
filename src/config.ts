@@ -28,8 +28,12 @@ export const config = {
 
   // --- Feature flags -----------------------------------------------------
   flags: {
-    /** Tile the grid endlessly by wrapping the item list (see lib/grid.ts). */
-    INFINITE_WRAP: true,
+    /**
+     * true  → tile the grid endlessly by wrapping the item list (repeats).
+     * false → every item appears exactly once, centre-out around the hero,
+     *         and the camera is clamped to the finite field (see lib/grid.ts).
+     */
+    INFINITE_WRAP: false,
     /** Master switch for the ambient music bar. */
     MUSIC_ENABLED: true,
     /**
@@ -90,14 +94,17 @@ export const HERO_CENTER = {
 } as const;
 
 /**
- * Finite grid bounds used when INFINITE_WRAP is false. With wrap enabled the
- * field extends indefinitely; these still bound the soft-clamp comfort zone.
+ * Finite grid bounds (inclusive, in cells) used when INFINITE_WRAP is false.
+ * Sized snugly around HERO_HOLE so every item gets exactly one cell with a
+ * couple to spare: 11×7 = 77 cells − 15 hero cells = 62 slots for ~60 items
+ * (the two left over stay empty at the far corners). Also the region the
+ * camera pan-clamp keeps in view. Widen if the collection outgrows it.
  */
 export const GRID_BOUNDS = {
-  minCol: -30,
-  maxCol: 30,
-  minRow: -22,
-  maxRow: 22,
+  minCol: -5,
+  maxCol: 5,
+  minRow: -3,
+  maxRow: 3,
 } as const;
 
 /** Extra world-space margin (px) of items mounted beyond the viewport edge. */
