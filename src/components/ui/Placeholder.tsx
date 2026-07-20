@@ -8,7 +8,8 @@
 import type { Category } from "@/data/items";
 import { hashStringToInt } from "@/lib/seededRandom";
 
-const CATEGORY_GLYPH: Record<Category, string> = {
+/** Category shorthand glyph. Also used by the inspo board's fallback cards. */
+export const CATEGORY_GLYPH: Record<Category, string> = {
   packaging: "▣",
   matchbox: "✦",
   "film-poster": "▤",
@@ -19,6 +20,30 @@ const CATEGORY_GLYPH: Record<Category, string> = {
   misc: "✲",
 };
 
+/** hsl → #rrggbb. Excalidraw stores element colours as hex, so the inspo
+ *  board's placeholder cards need the same palette in that form. */
+function hslToHex(h: number, s: number, l: number): string {
+  const a = (s / 100) * Math.min(l / 100, 1 - l / 100);
+  const channel = (n: number) => {
+    const k = (n + h / 30) % 12;
+    const v = l / 100 - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+    return Math.round(255 * v)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${channel(0)}${channel(8)}${channel(4)}`;
+}
+
+/**
+ * Seeded warm palette for an item's placeholder, keyed by id so each cutout
+ * reads slightly different but never changes between renders. Shared with the
+ * inspo board so its fallback cards match the canvas ones.
+ */
+export function placeholderPalette(id: string): { tint: string; ink: string } {
+  const hue = 28 + (hashStringToInt(id) % 40); // kept in a warm band
+  return { tint: hslToHex(hue, 38, 92), ink: hslToHex(hue, 30, 42) };
+}
+
 interface PlaceholderProps {
   id: string;
   nameEn: string;
@@ -26,10 +51,7 @@ interface PlaceholderProps {
 }
 
 export function Placeholder({ id, nameEn, category }: PlaceholderProps) {
-  // Seeded warm hue so each cutout reads slightly different.
-  const hue = hashStringToInt(id) % 40; // 0–39, kept in a warm band
-  const tint = `hsl(${28 + hue}, 38%, 92%)`;
-  const ink = `hsl(${28 + hue}, 30%, 42%)`;
+  const { tint, ink } = placeholderPalette(id);
 
   return (
     <div

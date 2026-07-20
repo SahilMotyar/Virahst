@@ -43,6 +43,38 @@ Drop transparent PNGs into `public/items/` named `<slug>.png` (slugs are in
 [`src/data/items.ts`](src/data/items.ts)), then set `flags.ASSETS_PRESENT = true` in
 `src/config.ts`. Missing files still fall back to placeholders.
 
+## Inspo board
+
+`/inspo` is a private, free-form **Excalidraw** canvas for curatorial thinking —
+pulling items off the museum canvas, drawing arrows between them, jotting notes
+("these belong in the same era"). It's a maintainer tool, not a visitor feature,
+and it's deliberately *not* built on the hand-rolled canvas engine: Excalidraw
+brings arrows, freehand, shapes and text for free.
+
+Getting items onto it:
+
+- **Send to Inspo Board** on any item detail card queues that item without
+  navigating away (the queue survives a reload — see `store/inspoStore.ts`).
+- **Load all items** on the board itself dumps the whole collection onto a grid,
+  asking first if the board isn't already empty. New batches always land *below*
+  existing work rather than over it.
+
+Each item lands as its image (when `ASSETS_PRESENT` and the PNG resolves) or a
+tinted placeholder rectangle mirroring `<Placeholder>`, plus its advertising
+tagline as a separate text element — the copy is the point, so it's there to
+riff on. Cards link back to `/item/<slug>`.
+
+The board saves to `localStorage` on every change (debounced 500ms). Museum
+images are stored as a `fileId → slug` map and re-fetched on load rather than
+persisted as base64, which keeps the payload small — a full 59-item board is
+~150KB against a ~5–10MB ceiling. Images pasted or dragged in from outside the
+app have no slug to re-derive from, so those are stored inline. IndexedDB is the
+upgrade path if that ever becomes the constraint.
+
+Excalidraw serves its own fonts, so `npm run copy:excalidraw-fonts` copies them
+from `node_modules` into `public/fonts` (gitignored — it's a build artefact).
+`predev`/`prebuild` run it automatically.
+
 ## Music
 
 The `MusicBar` uses the **Spotify IFrame API** (no Premium/OAuth needed): a 1px-hidden

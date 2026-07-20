@@ -27,6 +27,9 @@
 # fetched image candidates (curation scratch — winners go to public/items/)
 /data/asset-candidates/
 
+# Excalidraw fonts, copied out of node_modules by predev/prebuild
+/public/fonts/
+
 # debug
 npm-debug.log*
 yarn-debug.log*

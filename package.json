@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "copy:excalidraw-fonts": "node scripts/copy-excalidraw-fonts.mjs",
+    "predev": "npm run copy:excalidraw-fonts",
     "dev": "next dev",
+    "prebuild": "npm run copy:excalidraw-fonts",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
@@ -11,6 +14,7 @@
     "fetch:assets": "node --experimental-strip-types scripts/fetch-assets.mjs"
   },
   "dependencies": {
+    "@excalidraw/excalidraw": "^0.18.1",
     "motion": "^12.40.0",
     "next": "16.2.0",
     "react": "19.2.4",

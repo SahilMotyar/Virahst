@@ -42,6 +42,15 @@ body {
   -webkit-user-select: none;
 }
 
+/* The inspo board (/inspo) keeps the MusicBar, which is fixed bottom-left and
+   would sit on top of Excalidraw's zoom/undo island. Lift the island clear of
+   it rather than touching the MusicBar. Verified against the class name in
+   @excalidraw/excalidraw's shipped CSS; a version bump that renames it costs
+   an overlap, not a break. */
+.inspo-shell .layer-ui__wrapper__footer-left {
+  margin-bottom: 5.25rem;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

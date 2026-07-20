@@ -10,6 +10,8 @@
  *   npm run fetch:assets -- --limit 5         # first N items only
  *   npm run fetch:assets -- --per-source 4    # candidates per source (default 3)
  *   npm run fetch:assets -- --force           # refetch folders that already exist
+ *   npm run fetch:assets -- --only nirma --force --query "Nirma detergent"
+ *                                             # hand-tuned search (single slug)
  *
  * Curation flow: eyeball each folder, pick a winner, save it (cropped/cleaned)
  * as public/items/<slug>.png, then flip config.flags.ASSETS_PRESENT. Keep the
@@ -55,6 +57,8 @@ const ONLY = opt("only", "")
 const LIMIT = Number(opt("limit", "0")) || 0;
 const PER_SOURCE = Number(opt("per-source", "3")) || 3;
 const FORCE = flag("force");
+/** Hand-tuned search override — meant for use with a single --only slug. */
+const QUERY_OVERRIDE = opt("query", "");
 
 // --- helpers ----------------------------------------------------------------
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -224,7 +228,7 @@ for (const item of queue) {
     continue;
   }
 
-  const query = buildQuery(item);
+  const query = QUERY_OVERRIDE || buildQuery(item);
   console.log(`▶ ${item.slug} — "${query}"`);
 
   const results = [];

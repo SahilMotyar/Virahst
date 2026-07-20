@@ -7,6 +7,7 @@
 import type { VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { AdvertisingBlock } from "@/components/item/AdvertisingBlock";
+import { SendToInspoButton } from "@/components/item/SendToInspoButton";
 import { config } from "@/config";
 
 function Chip({ children }: { children: React.ReactNode }) {
@@ -69,6 +70,10 @@ export function ItemDetail({ item }: { item: VintageItem }) {
 
         <div className="mt-7">
           <AdvertisingBlock advertising={item.advertising} />
+        </div>
+
+        <div className="mt-6">
+          <SendToInspoButton slug={item.slug} />
         </div>
       </div>
     </article>

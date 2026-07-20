@@ -1,9 +1,15 @@
+"use client";
+
 /**
- * Fixed top navigation: logo mark + wordmark, nav links, and a Sign In pill.
+ * Fixed top navigation: logo mark + wordmark, nav links, and the inspo link.
  * Links to Phase-3/5 routes are present but those pages are stubs for now.
+ *
+ * Client-side only so it can stand down on /inspo, where Excalidraw owns the
+ * top of the screen and a fixed bar would sit over its toolbar.
  */
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { config } from "@/config";
 
 const LINKS = [
@@ -14,6 +20,9 @@ const LINKS = [
 ];
 
 export function TopNav() {
+  const pathname = usePathname();
+  if (pathname?.startsWith("/inspo")) return null;
+
   return (
     <nav className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-5 py-3.5 sm:px-7">
       <Link href="/" className="flex items-center gap-2.5">
@@ -37,8 +46,14 @@ export function TopNav() {
         ))}
       </div>
 
-      {/* Right-side spacer keeps the nav links visually centred. */}
-      <div aria-hidden className="w-20" />
+      {/* Personal ideation board — occupies what was the centring spacer. */}
+      <Link
+        href="/inspo"
+        title="Personal inspo board"
+        className="w-20 text-right text-sm font-medium text-ink-2 transition-colors hover:text-accent"
+      >
+        Inspo
+      </Link>
     </nav>
   );
 }
