@@ -37,6 +37,7 @@ import { items, getItemBySlug, type VintageItem } from "@/data/items";
 import { useInspoStore } from "@/store/inspoStore";
 import { buildItemElements, loadItemImage } from "./itemElements";
 import { loadBoard, saveBoard } from "./persistence";
+import { ItemPicker } from "./ItemPicker";
 
 // Excalidraw fetches its hand-drawn fonts from this base at runtime; the files
 // are copied into public/fonts by the predev/prebuild script. Module scope so
@@ -95,6 +96,7 @@ export default function InspoBoard() {
   /** False until any saved board has been committed to the scene — see
    *  waitForRestore. Gates the controls that read and rewrite the scene. */
   const [restored, setRestored] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
   // Read once, on the client only (this component never server-renders).
   const [saved] = useState(loadBoard);
 
@@ -221,6 +223,16 @@ export default function InspoBoard() {
     };
   }, [api, saved, addItems]);
 
+  /** Add a chosen set of items (from the picker) without a confirm — the user
+   *  hand-picked them, so scattering onto existing work isn't a risk here. */
+  const addSlugs = useCallback(
+    (slugs: string[]) => {
+      if (!api || !restored) return;
+      void addItems(api, slugs);
+    },
+    [api, restored, addItems],
+  );
+
   const loadAll = useCallback(() => {
     if (!api || !restored) return;
     if (
@@ -257,12 +269,25 @@ export default function InspoBoard() {
         </Link>
         <button
           type="button"
+          onClick={() => setPickerOpen((v) => !v)}
+          disabled={!api || !restored}
+          aria-expanded={pickerOpen}
+          className="pointer-events-auto rounded-full bg-white/95 px-3.5 py-1.5 text-sm font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:text-ink disabled:opacity-50"
+        >
+          Add items…
+        </button>
+        <button
+          type="button"
           onClick={loadAll}
           disabled={!api || !restored}
           className="pointer-events-auto rounded-full bg-accent/10 px-3.5 py-1.5 text-sm font-medium text-accent shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:bg-accent/20 disabled:opacity-50"
         >
           Load all items
         </button>
+
+        {pickerOpen && (
+          <ItemPicker onAdd={addSlugs} onClose={() => setPickerOpen(false)} />
+        )}
       </div>
     </div>
   );

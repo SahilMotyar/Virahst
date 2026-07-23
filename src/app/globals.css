@@ -48,7 +48,7 @@ body {
    @excalidraw/excalidraw's shipped CSS; a version bump that renames it costs
    an overlap, not a break. */
 .inspo-shell .layer-ui__wrapper__footer-left {
-  margin-bottom: 5.25rem;
+  margin-bottom: 9rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

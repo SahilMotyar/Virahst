@@ -55,9 +55,11 @@ Getting items onto it:
 
 - **Send to Inspo Board** on any item detail card queues that item without
   navigating away (the queue survives a reload — see `store/inspoStore.ts`).
-- **Load all items** on the board itself dumps the whole collection onto a grid,
-  asking first if the board isn't already empty. New batches always land *below*
-  existing work rather than over it.
+- **Add items…** on the board opens a searchable, multi-select picker
+  (`components/inspo/ItemPicker.tsx`) to drop in just the items you want.
+- **Load all items** dumps the whole collection onto a grid, asking first if the
+  board isn't already empty. New batches always land *below* existing work
+  rather than over it.
 
 Each item lands as its image (when `ASSETS_PRESENT` and the PNG resolves) or a
 tinted placeholder rectangle mirroring `<Placeholder>`, plus its advertising
