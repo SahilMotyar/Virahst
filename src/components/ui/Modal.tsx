@@ -7,7 +7,7 @@
  * modals.
  */
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useId, useRef, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 
@@ -36,18 +36,57 @@ export function Modal({ open, onClose, eyebrow, title, children }: ModalProps) {
   // Portal to body so the modal escapes any transformed ancestor (the canvas
   // layer uses `transform`, which would otherwise trap `position: fixed`).
   const mounted = useMounted();
+  const cardRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     if (!open) return;
+
+    // Remember who opened the dialog so focus can go back there on close —
+    // without this, closing drops the caret at the top of the document.
+    const opener = document.activeElement as HTMLElement | null;
+
+    const focusables = () =>
+      Array.from(
+        cardRef.current?.querySelectorAll<HTMLElement>(
+          'a[href],button:not([disabled]),input,select,textarea,[tabindex]:not([tabindex="-1"])',
+        ) ?? [],
+      ).filter((el) => el.offsetParent !== null);
+
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        onClose();
+        return;
+      }
+      // Trap Tab inside the dialog: a modal the keyboard can wander out of
+      // still lets you operate the page it's covering.
+      if (e.key !== "Tab") return;
+      const els = focusables();
+      if (els.length === 0) return;
+      const first = els[0];
+      const last = els[els.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && (active === first || !cardRef.current?.contains(active))) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
+
     document.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    // Focus the dialog itself rather than its close button, so the title is
+    // what gets announced.
+    const raf = requestAnimationFrame(() => cardRef.current?.focus());
+
     return () => {
+      cancelAnimationFrame(raf);
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
+      opener?.focus?.();
     };
   }, [open, onClose]);
 
@@ -64,10 +103,13 @@ export function Modal({ open, onClose, eyebrow, title, children }: ModalProps) {
           exit={{ opacity: 0 }}
         >
           <motion.div
+            ref={cardRef}
             role="dialog"
             aria-modal="true"
-            aria-label={title}
-            className="relative w-full max-w-md rounded-[22px] bg-bg p-7 shadow-[0_1px_2px_rgba(0,0,0,.05),0_24px_70px_rgba(0,0,0,.25)] sm:p-8"
+            aria-labelledby={title ? titleId : undefined}
+            aria-label={title ? undefined : "Dialog"}
+            tabIndex={-1}
+            className="relative w-full max-w-md rounded-[22px] bg-bg p-6 shadow-[0_1px_2px_rgba(0,0,0,.05),0_24px_70px_rgba(0,0,0,.25)] focus:outline-none sm:p-8"
             onClick={(e) => e.stopPropagation()}
             initial={reduce ? false : { opacity: 0, y: 14, scale: 0.985 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -78,7 +120,7 @@ export function Modal({ open, onClose, eyebrow, title, children }: ModalProps) {
               type="button"
               aria-label="Close"
               onClick={onClose}
-              className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-black/4 hover:text-ink"
+              className="absolute right-3 top-3 flex h-11 w-11 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-black/4 hover:text-ink"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M18 6 6 18M6 6l12 12" />
@@ -86,12 +128,14 @@ export function Modal({ open, onClose, eyebrow, title, children }: ModalProps) {
             </button>
 
             {eyebrow && (
-              <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-accent">
+              <p className="pr-10 text-[11px] font-medium uppercase tracking-[0.28em] text-accent-ink">
                 {eyebrow}
               </p>
             )}
             {title && (
-              <h2 className="mt-2 font-display text-2xl text-ink">{title}</h2>
+              <h2 id={titleId} className="mt-2 pr-10 font-display text-2xl text-ink">
+                {title}
+              </h2>
             )}
             <div className="mt-4 text-sm leading-relaxed text-ink-2">
               {children}
