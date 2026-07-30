@@ -6,7 +6,13 @@
   --canvas: #fdfbf6; /* canvas slightly lighter than chrome */
   --ink: #1a1a1a;
   --ink-2: #6b6b66;
-  --accent: #d98a2b; /* deep marigold */
+  /* Decorative marigold. Only 2.6:1 on the cream bg, so it is for FILLS,
+     tints and borders — never for text or meaningful icons. */
+  --accent: #d98a2b;
+  /* Same hue darkened to 5.0:1 on --bg (5.3:1 on white) — the token every
+     accent-coloured word, link and icon uses, so the brand reads as marigold
+     while staying legible. Pairs with --bg for text on a solid accent fill. */
+  --accent-ink: #9a5d13;
   --indigo: #2b3a67;
 }
 
@@ -18,6 +24,7 @@
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
   --color-indigo: var(--indigo);
   --font-sans: var(--font-inter), system-ui, sans-serif;
   --font-display: var(--font-display-devanagari), Georgia, serif;
@@ -34,12 +41,60 @@ body {
   color: var(--ink);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  /* Stop iOS bumping type size in landscape without disabling user zoom. */
+  text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* --- Focus -------------------------------------------------------------
+   One visible ring for everything focusable. Written unlayered so it beats
+   Tailwind's `outline-none` utilities — a component can't silently opt out
+   of having a focus indicator. :where() keeps specificity at 0 so an
+   intentional override still only needs a normal selector. */
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-ink);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+/* Elements that already carry their own radius shouldn't get a square ring. */
+:where(.rounded-full):focus-visible {
+  border-radius: 9999px;
 }
 
 /* The canvas disables text selection so dragging never highlights captions. */
 .canvas-no-select {
   user-select: none;
   -webkit-user-select: none;
+}
+
+/* Grows a small control's touch area to 44×44 without changing how it looks
+   or reflowing its neighbours — for icon buttons that must stay visually
+   small (the music widget). Keep ≥8px of visual gap between two of these so
+   the expanded areas don't collide. */
+.hit-44 {
+  position: relative;
+}
+.hit-44::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  transform: translate(-50%, -50%);
+}
+
+/* Keeps bottom-anchored fixed chrome above the iOS home indicator. */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* Canvas item captions are hover-revealed, which means "never shown" on a
+   touch screen. Where hover genuinely doesn't exist, show them always. */
+@media (hover: none) {
+  .canvas-caption {
+    opacity: 1;
+  }
 }
 
 /* The inspo board (/inspo) keeps the MusicBar, which is fixed bottom-left and

@@ -13,9 +13,7 @@
  */
 
 import { useCallback, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useCameraStore } from "@/store/cameraStore";
-import { useUIStore } from "@/store/uiStore";
 import { useCanvasCamera } from "@/components/canvas/useCanvasCamera";
 import { useVirtualization } from "@/components/canvas/useVirtualization";
 import { CanvasItem } from "@/components/canvas/CanvasItem";
@@ -23,22 +21,12 @@ import { HeroBlock } from "@/components/canvas/HeroBlock";
 import { INITIAL_SCALE } from "@/config";
 
 export function Canvas() {
-  const router = useRouter();
   const containerRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 
   const onReady = useCallback(() => setReady(true), []);
-  const onTapItem = useCallback(
-    (slug: string) => {
-      // Clear the hover preview before navigating so nothing is mid-unmount
-      // during the route transition.
-      useUIStore.getState().setHovered(null);
-      router.push(`/item/${slug}`);
-    },
-    [router],
-  );
-  useCanvasCamera(containerRef, layerRef, onReady, onTapItem);
+  useCanvasCamera(containerRef, layerRef, onReady);
 
   const range = useCameraStore((s) => s.range);
   const visible = useVirtualization(range);
@@ -51,7 +39,7 @@ export function Canvas() {
       // reconciliation crash with insertBefore/removeChild errors.
       translate="no"
       className="canvas-no-select absolute inset-0 touch-none overflow-hidden bg-canvas"
-      aria-label="Vintage archive canvas. Drag to pan, scroll or pinch to zoom."
+      aria-label="Vintage archive canvas. Drag or use arrow keys to pan, scroll or pinch to zoom, Home to recentre. Tab through items and press Enter to open one."
       role="application"
     >
       <div

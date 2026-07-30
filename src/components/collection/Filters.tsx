@@ -47,13 +47,16 @@ export function Filters({ state, onChange }: FiltersProps) {
           <circle cx="11" cy="11" r="8" />
           <path d="m21 21-4.3-4.3" />
         </svg>
+        {/* text-base (16px) is deliberate: iOS zooms the whole page in when a
+            focused input's text is smaller than that. */}
         <input
           type="search"
           value={state.query}
           onChange={(e) => onChange({ query: e.target.value })}
           placeholder="Search products…"
           aria-label="Search products"
-          className="w-full rounded-full border border-black/10 bg-white py-2.5 pl-10 pr-4 text-sm text-ink outline-none transition-colors placeholder:text-ink-2 focus:border-accent/40"
+          autoComplete="off"
+          className="min-h-11 w-full rounded-full border border-black/10 bg-white py-2.5 pl-10 pr-4 text-base text-ink transition-colors placeholder:text-ink-2 focus:border-accent-ink/50"
         />
       </div>
 

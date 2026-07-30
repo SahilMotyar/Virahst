@@ -16,8 +16,11 @@
  *     range triggers zero React renders.
  *
  * Pointer Events cover mouse + touch (incl. two-finger pinch); wheel handles
- * trackpad pan and ctrl/⌘ zoom. `onReady` fires once the camera is centred, so
- * Canvas can fade the field in instead of flashing an un-centred SSR frame.
+ * trackpad pan and ctrl/⌘ zoom; arrows/+/-/Home drive it from the keyboard.
+ * `onReady` fires once the camera is centred, so Canvas can fade the field in
+ * instead of flashing an un-centred SSR frame.
+ *
+ * Opening an item is NOT handled here — each CanvasItem renders a real link.
  */
 
 import { useEffect, useRef, type RefObject } from "react";
@@ -29,15 +32,11 @@ import {
   HERO_CENTER,
   CELL_W,
   CELL_H,
-  ITEM_W,
-  ITEM_H,
   OVERSCAN,
   GRID_BOUNDS,
   config,
 } from "@/config";
 import { useCameraStore, type CellRange } from "@/store/cameraStore";
-import { cellToWorld, isRenderableCell, itemIndexForCell } from "@/lib/grid";
-import { items } from "@/data/items";
 
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
@@ -71,7 +70,6 @@ export function useCanvasCamera(
   containerRef: RefObject<HTMLDivElement | null>,
   layerRef: RefObject<HTMLDivElement | null>,
   onReady?: () => void,
-  onTapItem?: (slug: string) => void,
 ) {
   // Live truth — never triggers a React render.
   const cam = useRef<Cam>({ x: 0, y: 0, scale: INITIAL_SCALE });
@@ -178,8 +176,14 @@ export function useCanvasCamera(
     };
 
     // --- initial framing: centre the hero hole -------------------------
+    // The hero lives in world space, so at a fixed scale it overflows narrow
+    // viewports (560 world px × 0.72 = 403px, wider than a 360px phone). Back
+    // the scale off just enough to fit it with a margin; never zoom past the
+    // desktop default, so wide screens are unaffected.
     if (!initialised.current) {
-      const scale = INITIAL_SCALE;
+      const heroWorldW = viewW < 640 ? 440 : 560;
+      const fit = (viewW - 40) / heroWorldW;
+      const scale = clamp(Math.min(INITIAL_SCALE, fit), MIN_SCALE, MAX_SCALE);
       cam.current = {
         scale,
         x: viewW / 2 - HERO_CENTER.x * scale,
@@ -238,28 +242,10 @@ export function useCanvasCamera(
       syncScale();
     };
 
-    // --- tap hit-test: world point → cell → item slug ------------------
-    const tapItemAt = (clientX: number, clientY: number) => {
-      if (!onTapItem) return;
-      const rect = container.getBoundingClientRect();
-      const { x, y, scale } = cam.current;
-      const worldX = (clientX - rect.left - x) / scale;
-      const worldY = (clientY - rect.top - y) / scale;
-      const col = Math.floor(worldX / CELL_W);
-      const row = Math.floor(worldY / CELL_H);
-      if (!isRenderableCell(col, row)) return;
-      const { x: ix, y: iy } = cellToWorld(col, row);
-      if (
-        worldX >= ix &&
-        worldX <= ix + ITEM_W &&
-        worldY >= iy &&
-        worldY <= iy + ITEM_H
-      ) {
-        onTapItem(items[itemIndexForCell(col, row, items.length)].slug);
-      }
-    };
-
     // --- pointer (pan + pinch) -----------------------------------------
+    // Opening an item is handled by the real <a> each CanvasItem renders, not
+    // by hit-testing here: that keeps the canvas keyboard-navigable and lets
+    // items be opened in a new tab, copied, and read by assistive tech.
     const pointers = new Map<number, { x: number; y: number }>();
     let dragging = false;
     let last = { x: 0, y: 0, t: 0 };
@@ -280,7 +266,11 @@ export function useCanvasCamera(
         velocity.x = 0;
         velocity.y = 0;
         container.style.cursor = "grabbing";
-        setLayerInteractive(false);
+        // NB: pointer-events on the layer stay ON until the pointer actually
+        // travels (see onPointerMove). Killing them here would make mousedown
+        // and mouseup resolve to different elements, so the synthesised click
+        // would land on the container instead of the item's link — i.e. plain
+        // clicks would stop opening items.
       } else if (pointers.size === 2) {
         dragging = false;
         const pts = [...pointers.values()];
@@ -322,6 +312,10 @@ export function useCanvasCamera(
         Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) > TAP_SLOP
       ) {
         movedFar = true;
+        // Now it's a real drag: suspend hit-testing on the layer so the items
+        // sliding under a stationary cursor don't fire a storm of hover
+        // enter/leave, and so releasing over an item doesn't open it.
+        setLayerInteractive(false);
       }
       scheduleFrame();
     };
@@ -340,9 +334,9 @@ export function useCanvasCamera(
           const isTap =
             !movedFar && performance.now() - tapStart.t < TAP_TIME;
           if (isTap) {
-            // A click/tap on an item opens its detail; no momentum.
+            // A tap never moved the layer, so its hit-testing was never
+            // suspended — the browser's own click lands on the item's link.
             setLayerInteractive(true);
-            tapItemAt(e.clientX, e.clientY);
           } else if (
             !reducedMotion &&
             Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY
@@ -387,12 +381,54 @@ export function useCanvasCamera(
     container.addEventListener("pointercancel", endPointer);
     container.addEventListener("wheel", onWheel, { passive: false });
 
+    // --- keyboard panning ----------------------------------------------
+    // The canvas is the primary navigation surface, so it has to be drivable
+    // without a pointer: arrows pan, +/- zoom, Home re-centres the hero.
+    // Ignored while typing in a field, and Tab is left alone so focus can
+    // still move through the items.
+    const KEY_PAN = 90;
+    const onKeyDown = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      const step = e.shiftKey ? KEY_PAN * 2.5 : KEY_PAN;
+      let handled = true;
+      switch (e.key) {
+        case "ArrowLeft": cam.current.x += step; break;
+        case "ArrowRight": cam.current.x -= step; break;
+        case "ArrowUp": cam.current.y += step; break;
+        case "ArrowDown": cam.current.y -= step; break;
+        case "+":
+        case "=": zoomAt(viewW / 2, viewH / 2, 1.25); syncScale(true); return;
+        case "-":
+        case "_": zoomAt(viewW / 2, viewH / 2, 1 / 1.25); syncScale(true); return;
+        case "Home": {
+          const { scale } = cam.current;
+          cam.current.x = viewW / 2 - HERO_CENTER.x * scale;
+          cam.current.y = viewH / 2 - HERO_CENTER.y * scale;
+          break;
+        }
+        default: handled = false;
+      }
+      if (!handled) return;
+      e.preventDefault();
+      stopMomentum();
+      scheduleFrame();
+    };
+    container.addEventListener("keydown", onKeyDown);
+
     // --- imperative controls for the fixed ZoomControls overlay --------
     registerControls({
       zoomByCenter: (factor: number) => {
         stopMomentum();
         zoomAt(viewW / 2, viewH / 2, factor);
         syncScale(true);
+      },
+      panToWorld: (wx: number, wy: number) => {
+        stopMomentum();
+        const { scale } = cam.current;
+        cam.current.x = viewW / 2 - wx * scale;
+        cam.current.y = viewH / 2 - wy * scale;
+        scheduleFrame();
       },
     });
 
@@ -413,16 +449,9 @@ export function useCanvasCamera(
       container.removeEventListener("pointerup", endPointer);
       container.removeEventListener("pointercancel", endPointer);
       container.removeEventListener("wheel", onWheel);
+      container.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("resize", onResize);
       registerControls(null);
     };
-  }, [
-    containerRef,
-    layerRef,
-    setScale,
-    setRange,
-    registerControls,
-    onReady,
-    onTapItem,
-  ]);
+  }, [containerRef, layerRef, setScale, setRange, registerControls, onReady]);
 }

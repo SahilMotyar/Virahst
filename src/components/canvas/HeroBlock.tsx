@@ -20,38 +20,41 @@ export function HeroBlock() {
   return (
     <>
     <div
-      className="absolute flex flex-col items-center text-center"
+      // Narrower in world units on phones: at 560 the block is wider than a
+      // 360px viewport once the camera's initial scale is applied, so the
+      // title used to be clipped on both edges. The camera also fits its
+      // starting scale to this width — see useCanvasCamera.
+      className="absolute flex w-[440px] flex-col items-center text-center sm:w-[560px]"
       style={{
         left: HERO_CENTER.x,
         top: HERO_CENTER.y,
         transform: "translate(-50%, -50%)",
-        width: 560,
       }}
     >
-      <h1 className="font-hero text-[96px] leading-[1.05] tracking-tight text-ink">
+      <h1 className="font-hero text-[84px] leading-[1.05] tracking-tight text-ink sm:text-[96px]">
         {config.heroTitle}
       </h1>
-      <p className="mt-4 text-xs uppercase text-ink-2" style={{ letterSpacing: "0.35em" }}>
+      <p className="mt-4 text-[13px] uppercase text-ink-2 sm:text-xs" style={{ letterSpacing: "0.35em" }}>
         {config.heroSubtitle}
       </p>
 
-      <p className="mt-6 max-w-[34ch] text-[15px] leading-relaxed text-ink-2">
+      <p className="mt-6 max-w-[34ch] text-base leading-relaxed text-ink-2 sm:text-[15px]">
         {config.tagline}
       </p>
 
-      <p className="mt-5 text-[13px] font-medium text-ink-2">
-        <span className="text-accent">{brandCount}</span> categories
+      <p className="mt-5 text-sm font-medium text-ink-2 sm:text-[13px]">
+        <span className="text-accent-ink">{brandCount}</span> categories
         <span className="mx-2 opacity-40">·</span>
-        <span className="text-accent">{productCount}</span> products
+        <span className="text-accent-ink">{productCount}</span> products
       </p>
 
       <div className="mt-7 flex flex-col items-center gap-3">
         <Link
           href="/collection"
-          className="inline-flex items-center gap-2 rounded-full bg-ink px-7 py-3 text-sm font-medium text-bg transition-colors hover:bg-black"
+          className="inline-flex min-h-13 items-center gap-2 rounded-full bg-ink px-7 text-[15px] font-medium text-bg transition-colors hover:bg-black sm:min-h-12 sm:text-sm"
         >
           Browse collection
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
             <path d="M5 12h14M12 5l7 7-7 7" />
           </svg>
         </Link>
@@ -59,21 +62,21 @@ export function HeroBlock() {
           <button
             type="button"
             onClick={() => setInfo("how")}
-            className="rounded-full bg-white px-4 py-2 text-xs font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05)] transition-colors hover:text-ink"
+            className="min-h-12 rounded-full bg-white px-5 text-[13px] font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05)] transition-colors hover:text-ink sm:min-h-11 sm:text-xs"
           >
             How it works
           </button>
           <button
             type="button"
             onClick={() => setInfo("why")}
-            className="rounded-full bg-white px-4 py-2 text-xs font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05)] transition-colors hover:text-ink"
+            className="min-h-12 rounded-full bg-white px-5 text-[13px] font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05)] transition-colors hover:text-ink sm:min-h-11 sm:text-xs"
           >
             Why this exists
           </button>
         </div>
       </div>
 
-      <p className="mt-6 text-[11px] text-ink-2 opacity-60">
+      <p className="mt-6 text-xs text-ink-2 opacity-60 sm:text-[11px]">
         by {config.handle}
       </p>
     </div>

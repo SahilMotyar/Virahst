@@ -16,6 +16,13 @@ import { INITIAL_SCALE } from "@/config";
 export interface CameraControls {
   /** Zoom by a multiplicative factor, anchored at the viewport centre. */
   zoomByCenter: (factor: number) => void;
+  /**
+   * Centre the viewport on a world-space point. Used when keyboard focus
+   * lands on an item that is currently off-screen — WCAG 2.4.11 wants the
+   * focused element actually visible, and on a pannable canvas that means
+   * moving the camera to it.
+   */
+  panToWorld: (x: number, y: number) => void;
 }
 
 export interface CellRange {
