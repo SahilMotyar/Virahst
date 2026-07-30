@@ -14,7 +14,7 @@ export function StubPage({ title, blurb }: { title: string; blurb: string }) {
       </span>
       <h1 className="mt-6 font-display text-4xl text-ink">{title}</h1>
       <p className="mt-3 max-w-sm text-sm leading-relaxed text-ink-2">{blurb}</p>
-      <p className="mt-6 text-[11px] font-medium uppercase tracking-[0.28em] text-accent">
+      <p className="mt-6 text-[11px] font-medium uppercase tracking-[0.28em] text-accent-ink">
         Coming soon
       </p>
       <Link

@@ -39,7 +39,7 @@ export function SendToInspoButton({ slug }: { slug: string }) {
         type="button"
         onClick={send}
         aria-live="polite"
-        className="rounded-full bg-accent/10 px-4 py-2 text-[13px] font-medium text-accent transition-colors hover:bg-accent/20"
+        className="rounded-full bg-accent/10 px-4 py-2 text-[13px] font-medium text-accent-ink transition-colors hover:bg-accent/20"
       >
         {sent ? "Added to inspo board ✓" : "Send to Inspo Board"}
       </button>

@@ -12,7 +12,7 @@ import { config } from "@/config";
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
-    <span className="rounded-full bg-accent/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-accent">
+    <span className="rounded-full bg-accent/10 px-3 py-1 text-[11px] font-medium uppercase tracking-[0.12em] text-accent-ink">
       {children}
     </span>
   );
@@ -58,7 +58,7 @@ export function ItemDetail({ item }: { item: VintageItem }) {
 
         <div className="mt-5 flex items-center gap-4 text-sm text-ink-2">
           {item.priceVintage && (
-            <span className="font-medium text-accent">{item.priceVintage}</span>
+            <span className="font-medium text-accent-ink">{item.priceVintage}</span>
           )}
           <span aria-label={`${item.favorites} favourites`}>
             ★ {item.favorites}

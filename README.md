@@ -103,6 +103,31 @@ snapshot still works, just with `image: null`. The widget covers every track in 
 Real next/previous-track skipping would need the **Web Playback SDK + OAuth (PKCE)** (visitor
 login + Premium) — the documented upgrade path. The IFrame API only supports play/pause/seek.
 
+## Design tokens & accessibility
+
+Tokens live in [`src/app/globals.css`](src/app/globals.css). Two accent tokens,
+and the distinction matters:
+
+| Token | Use |
+| --- | --- |
+| `--accent` (`#d98a2b`) | **Fills, tints, borders only.** 2.6:1 on the cream background — far below the 4.5:1 text minimum. |
+| `--accent-ink` (`#9a5d13`) | **Every accent-coloured word, link and icon.** Same hue, 5.0:1 on `--bg`, 5.3:1 on white. Also the fill behind `--bg` text. |
+
+Reach for `text-accent-ink`, never `text-accent`.
+
+The rest of the baseline, all verified in a real browser at 360 / 768 / 1280px:
+
+- **Keyboard.** The canvas is a focusable surface: arrows pan, `+`/`-` zoom,
+  `Home` recentres. Every item is a real `<a>`, so Tab reaches it and Enter
+  opens it; focusing an off-screen item pans the camera to it. A single focus
+  ring is defined globally and cannot be removed by a `outline-none` utility.
+- **Touch.** Controls are ≥44px (or 24px with ≥8px spacing, per WCAG 2.2 2.5.8).
+  Nothing important is hover-only — item captions show permanently under
+  `@media (hover: none)`.
+- **Mobile.** Nav collapses into a sheet below `md`. The camera fits its
+  starting scale to the hero so it never overflows a narrow viewport. Form
+  inputs are 16px so iOS doesn't zoom on focus.
+
 ## Tech
 
 Next.js (App Router) · TypeScript (strict) · Tailwind CSS v4 · Zustand · `motion`.

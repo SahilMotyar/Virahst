@@ -95,7 +95,7 @@ export function HeroBlock() {
         </p>
         <p className="mt-3">
           Prefer a tidy list? The{" "}
-          <Link href="/collection" className="text-accent underline-offset-2 hover:underline">
+          <Link href="/collection" className="text-accent-ink underline-offset-2 hover:underline">
             collection
           </Link>{" "}
           view lets you search, filter and sort the same archive.

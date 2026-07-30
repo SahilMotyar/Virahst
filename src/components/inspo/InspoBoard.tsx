@@ -260,10 +260,15 @@ export default function InspoBoard() {
 
       {/* Board chrome. Sits below Excalidraw's own top-right island; wrapper is
           click-through so it never steals canvas drags. */}
-      <div className="pointer-events-none absolute right-3 top-16 z-30 flex flex-col items-end gap-2">
+      {/* Below `sm` this sits bottom-left, lifted clear of the music widget:
+          Excalidraw's mobile layout puts its own toolbar across the top and a
+          menu column down the right, and the chrome used to land on both.
+          col-reverse so the picker panel opens upward into free space rather
+          than downward off the bottom of the screen. */}
+      <div className="pointer-events-none absolute bottom-36 left-3 z-30 flex flex-col-reverse items-start gap-2 sm:bottom-auto sm:left-auto sm:right-3 sm:top-16 sm:flex-col sm:items-end">
         <Link
           href="/"
-          className="pointer-events-auto rounded-full bg-white/95 px-3.5 py-1.5 text-sm font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:text-ink"
+          className="pointer-events-auto flex min-h-11 items-center rounded-full bg-white/95 px-4 text-sm font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:text-ink"
         >
           ← Museum
         </Link>
@@ -272,7 +277,7 @@ export default function InspoBoard() {
           onClick={() => setPickerOpen((v) => !v)}
           disabled={!api || !restored}
           aria-expanded={pickerOpen}
-          className="pointer-events-auto rounded-full bg-white/95 px-3.5 py-1.5 text-sm font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:text-ink disabled:opacity-50"
+          className="pointer-events-auto flex min-h-11 items-center rounded-full bg-white/95 px-4 text-sm font-medium text-ink-2 shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:text-ink disabled:opacity-50"
         >
           Add items…
         </button>
@@ -280,7 +285,7 @@ export default function InspoBoard() {
           type="button"
           onClick={loadAll}
           disabled={!api || !restored}
-          className="pointer-events-auto rounded-full bg-accent/10 px-3.5 py-1.5 text-sm font-medium text-accent shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:bg-accent/20 disabled:opacity-50"
+          className="pointer-events-auto flex min-h-11 items-center rounded-full bg-accent/10 px-4 text-sm font-medium text-accent-ink shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.10)] backdrop-blur transition-colors hover:bg-accent/20 disabled:opacity-50"
         >
           Load all items
         </button>

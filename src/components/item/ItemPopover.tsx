@@ -21,7 +21,7 @@ export function ItemPopover() {
   return (
     <div className="pointer-events-none fixed bottom-20 right-5 z-30 hidden w-64 rounded-[18px] bg-white/95 p-4 shadow-[0_1px_2px_rgba(0,0,0,.05),0_12px_32px_rgba(0,0,0,.12)] backdrop-blur sm:block">
       <div className="flex flex-wrap items-center gap-1.5">
-        <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent">
+        <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-accent-ink">
           {item.region}
         </span>
         <span className="rounded-full bg-black/4 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-widest text-ink-2">
@@ -38,7 +38,7 @@ export function ItemPopover() {
 
       <div className="mt-3 flex items-center gap-3 text-xs text-ink-2">
         {item.priceVintage && (
-          <span className="font-medium text-accent">{item.priceVintage}</span>
+          <span className="font-medium text-accent-ink">{item.priceVintage}</span>
         )}
         <span>★ {item.favorites}</span>
         <span>✦ {item.comments}</span>

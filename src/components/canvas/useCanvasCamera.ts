@@ -181,8 +181,13 @@ export function useCanvasCamera(
     // the scale off just enough to fit it with a margin; never zoom past the
     // desktop default, so wide screens are unaffected.
     if (!initialised.current) {
-      const heroWorldW = viewW < 640 ? 440 : 560;
-      const fit = (viewW - 40) / heroWorldW;
+      const narrow = viewW < 640;
+      const heroWorldW = narrow ? 440 : 560;
+      // Pull back a little further than a pure fit on phones. At an exact fit
+      // the reserved hero hole fills the whole screen and the first load shows
+      // no objects at all — on a museum canvas that reads as an empty page.
+      // This brings the surrounding ring of items into frame.
+      const fit = ((viewW - 40) / heroWorldW) * (narrow ? 0.86 : 1);
       const scale = clamp(Math.min(INITIAL_SCALE, fit), MIN_SCALE, MAX_SCALE);
       cam.current = {
         scale,
@@ -257,7 +262,11 @@ export function useCanvasCamera(
     const onPointerDown = (e: PointerEvent) => {
       stopMomentum();
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      container.setPointerCapture(e.pointerId);
+      // Pointer capture is deliberately NOT taken here. Capturing retargets
+      // the compatibility mouse events (and therefore `click`) to the
+      // container, which would swallow every click meant for an item's link.
+      // It is taken on the first real movement instead — by then the pointer
+      // is still within TAP_SLOP of the container, so no moves are missed.
       if (pointers.size === 1) {
         dragging = true;
         last = { x: e.clientX, y: e.clientY, t: performance.now() };
@@ -273,6 +282,12 @@ export function useCanvasCamera(
         // clicks would stop opening items.
       } else if (pointers.size === 2) {
         dragging = false;
+        // A second finger means a pinch, never a tap — capture is safe here
+        // and keeps the gesture alive if a finger strays off the container.
+        for (const pid of pointers.keys()) {
+          if (!container.hasPointerCapture(pid)) container.setPointerCapture(pid);
+        }
+        setLayerInteractive(false);
         const pts = [...pointers.values()];
         pinchDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
       }
@@ -312,9 +327,13 @@ export function useCanvasCamera(
         Math.hypot(e.clientX - tapStart.x, e.clientY - tapStart.y) > TAP_SLOP
       ) {
         movedFar = true;
-        // Now it's a real drag: suspend hit-testing on the layer so the items
-        // sliding under a stationary cursor don't fire a storm of hover
-        // enter/leave, and so releasing over an item doesn't open it.
+        // Now it's a real drag: keep receiving moves if the pointer leaves the
+        // container, and suspend hit-testing on the layer so items sliding
+        // under a stationary cursor don't fire a storm of hover enter/leave —
+        // and so releasing over an item doesn't open it.
+        if (!container.hasPointerCapture(e.pointerId)) {
+          container.setPointerCapture(e.pointerId);
+        }
         setLayerInteractive(false);
       }
       scheduleFrame();
@@ -328,27 +347,27 @@ export function useCanvasCamera(
       }
       if (pointers.size < 2) pinchDist = 0;
       if (pointers.size === 0) {
-        if (dragging) {
-          dragging = false;
-          container.style.cursor = "grab";
-          const isTap =
-            !movedFar && performance.now() - tapStart.t < TAP_TIME;
-          if (isTap) {
-            // A tap never moved the layer, so its hit-testing was never
-            // suspended — the browser's own click lands on the item's link.
-            setLayerInteractive(true);
-          } else if (
-            !reducedMotion &&
-            Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY
-          ) {
-            // Flick → momentum (skipped under reduced-motion). The layer
-            // stays non-interactive until the glide settles (momentumStep
-            // restores it).
-            stopMomentum();
-            momentumRAF = requestAnimationFrame(momentumStep);
-          } else {
-            setLayerInteractive(true);
-          }
+        const wasDragging = dragging;
+        dragging = false;
+        container.style.cursor = "grab";
+        const isTap =
+          wasDragging && !movedFar && performance.now() - tapStart.t < TAP_TIME;
+        if (
+          wasDragging &&
+          !isTap &&
+          !reducedMotion &&
+          Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY
+        ) {
+          // Flick → momentum (skipped under reduced-motion). The layer stays
+          // non-interactive until the glide settles (momentumStep restores it).
+          stopMomentum();
+          momentumRAF = requestAnimationFrame(momentumStep);
+        } else {
+          // Every other way a gesture can end — tap, slow drag, or the last
+          // finger of a pinch — must hand interactivity back. This used to be
+          // reachable only via `dragging`, so lifting both pinch fingers at
+          // once left the whole field unclickable until the next drag.
+          setLayerInteractive(true);
         }
       } else if (pointers.size === 1) {
         // Dropped from pinch back to single-finger pan.

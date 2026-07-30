@@ -80,7 +80,7 @@ export function ItemPicker({
           type="button"
           onClick={onClose}
           aria-label="Close item picker"
-          className="text-lg leading-none text-ink-2 transition-colors hover:text-ink"
+          className="-mr-2 flex h-11 w-11 items-center justify-center rounded-full text-lg leading-none text-ink-2 transition-colors hover:bg-black/4 hover:text-ink"
         >
           ×
         </button>
@@ -94,7 +94,7 @@ export function ItemPicker({
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search items…"
           autoFocus
-          className="w-full rounded-full border border-black/8 bg-white/70 px-3.5 py-1.5 text-sm text-ink outline-none placeholder:text-ink-2/70 focus:border-accent/40"
+          className="min-h-11 w-full rounded-full border border-black/10 bg-white/70 px-3.5 text-base text-ink placeholder:text-ink-2 focus:border-accent-ink/50"
         />
       </div>
 
@@ -104,7 +104,7 @@ export function ItemPicker({
           type="button"
           onClick={toggleAllFiltered}
           disabled={filtered.length === 0}
-          className="font-medium text-accent transition-opacity hover:opacity-80 disabled:opacity-40"
+          className="min-h-11 font-medium text-accent-ink transition-opacity hover:opacity-80 disabled:opacity-40"
         >
           {allFilteredSelected ? "Clear these" : `Select all ${filtered.length}`}
         </button>
@@ -126,7 +126,7 @@ export function ItemPicker({
                   type="button"
                   onClick={() => toggle(item.slug)}
                   aria-pressed={on}
-                  className={`flex w-full items-center gap-3 rounded-[12px] px-2.5 py-2 text-left transition-colors ${
+                  className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left transition-colors ${
                     on ? "bg-accent/10" : "hover:bg-black/4"
                   }`}
                 >
@@ -134,8 +134,8 @@ export function ItemPicker({
                     aria-hidden
                     className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-[5px] border text-[10px] leading-none ${
                       on
-                        ? "border-accent bg-accent text-bg"
-                        : "border-black/25 text-transparent"
+                        ? "border-accent-ink bg-accent-ink text-bg"
+                        : "border-black/35 text-transparent"
                     }`}
                   >
                     ✓
@@ -161,7 +161,7 @@ export function ItemPicker({
           type="button"
           onClick={() => setSelected(new Set())}
           disabled={selected.size === 0}
-          className="rounded-full px-3 py-1.5 text-sm font-medium text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
+          className="min-h-11 rounded-full px-3 text-sm font-medium text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
         >
           Clear
         </button>
@@ -169,7 +169,7 @@ export function ItemPicker({
           type="button"
           onClick={confirm}
           disabled={selected.size === 0}
-          className="ml-auto rounded-full bg-accent px-4 py-1.5 text-sm font-medium text-bg transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="ml-auto min-h-11 rounded-full bg-accent-ink px-4 text-sm font-medium text-bg transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           Add {selected.size || ""} {selected.size === 1 ? "item" : "items"}
         </button>

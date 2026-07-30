@@ -28,11 +28,14 @@ export default function Error({
   reset: () => void;
 }) {
   useEffect(() => {
+    // Surface the cause; a silently-swallowed boundary makes the real bug
+    // (the one that survives the retries below) very hard to find.
+    console.error("[virasat] route error boundary:", error);
     if (autoRecoverAttempts < MAX_AUTO_RECOVER) {
       autoRecoverAttempts += 1;
       reset();
     }
-  }, [reset]);
+  }, [reset, error]);
 
   // Reset the counter once the user explicitly retries, so a later, unrelated
   // error gets its own fresh round of auto-recovery.
@@ -54,13 +57,14 @@ export default function Error({
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-1.5 rounded-full bg-ink px-5 py-2.5 text-sm font-medium text-bg transition-colors hover:bg-black"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-ink px-5 text-sm font-medium text-bg transition-colors hover:bg-black"
         >
           Try again
         </button>
+        {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- deliberate hard navigation: a soft nav keeps the corrupted client tree that landed us here, so a full document load is the actual escape hatch. */}
         <a
           href="/"
-          className="inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
+          className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-5 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
         >
           Back to the canvas
         </a>

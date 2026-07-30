@@ -267,11 +267,12 @@ export function MusicBar() {
         className="pointer-events-none fixed bottom-0 left-0 h-px w-px overflow-hidden opacity-0"
       />
 
-      <div className="fixed bottom-5 left-5 z-40 w-84 max-w-[calc(100vw-2.5rem)]">
-        <div className="relative flex items-center rounded-[22px] border border-black/5 bg-bg/95 py-3 pl-30 pr-4 shadow-[0_1px_2px_rgba(0,0,0,.05),0_14px_36px_rgba(0,0,0,.14)] backdrop-blur">
-          {/* Album disc. Outer scales up slightly when playing; inner spins (rAF). */}
+      <div className="safe-bottom fixed bottom-4 left-4 z-40 w-84 max-w-[calc(100vw-2rem)] sm:bottom-5 sm:left-5">
+        <div className="relative flex items-center rounded-[22px] border border-black/5 bg-bg/95 py-3 pl-25 pr-3 shadow-[0_1px_2px_rgba(0,0,0,.05),0_14px_36px_rgba(0,0,0,.14)] backdrop-blur sm:pl-30 sm:pr-4">
+          {/* Album disc. Outer scales up slightly when playing; inner spins (rAF).
+              Smaller on phones to leave room for full-size touch controls. */}
           <div
-            className="absolute -top-4 left-4 h-24 w-24"
+            className="absolute -top-3 left-3 h-20 w-20 sm:-top-4 sm:left-4 sm:h-24 sm:w-24"
             style={{
               transform: playing ? "scale(1.06)" : "scale(1)",
               transition: "transform 0.3s ease",
@@ -312,7 +313,7 @@ export function MusicBar() {
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Open playlist in Spotify"
-                className="shrink-0 text-ink-2 transition-colors hover:text-ink"
+                className="hit-44 shrink-0 text-ink-2 transition-colors hover:text-ink"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M7 17 17 7M9 7h8v8" />
@@ -324,10 +325,10 @@ export function MusicBar() {
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                aria-label="Previous track"
+                aria-label="Back 15 seconds"
                 disabled={disabled}
                 onClick={() => controls?.prev()}
-                className="shrink-0 text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-black/4 hover:text-ink disabled:opacity-40"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M7 6a1 1 0 0 0-2 0v12a1 1 0 0 0 2 0V6Z" />
@@ -340,7 +341,7 @@ export function MusicBar() {
                 aria-label={playing ? "Pause" : "Play ambient music"}
                 disabled={disabled}
                 onClick={() => controls?.toggle()}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink text-bg transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-ink text-bg transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {playing ? (
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -356,10 +357,10 @@ export function MusicBar() {
 
               <button
                 type="button"
-                aria-label="Next track"
+                aria-label="Forward 15 seconds"
                 disabled={disabled}
                 onClick={() => controls?.next()}
-                className="shrink-0 text-ink-2 transition-colors hover:text-ink disabled:opacity-40"
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-black/4 hover:text-ink disabled:opacity-40"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M17 6a1 1 0 0 1 2 0v12a1 1 0 0 1-2 0V6Z" />
@@ -367,20 +368,43 @@ export function MusicBar() {
                 </svg>
               </button>
 
+              {/* Seek. It announces itself as a slider and takes focus, so it
+                  has to actually respond to the arrow keys — it previously
+                  did nothing at all without a pointer. The padding gives the
+                  6px-tall bar a full-height grab area. */}
               <div
                 role="slider"
                 aria-label="Seek"
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(ratio * 100)}
-                tabIndex={0}
+                aria-valuetext={`${Math.round(ratio * 100)} percent`}
+                aria-disabled={disabled}
+                tabIndex={disabled ? -1 : 0}
                 onClick={onSeek}
-                className="relative ml-1 h-1.5 flex-1 cursor-pointer rounded-full bg-black/10"
+                onKeyDown={(e) => {
+                  const step =
+                    e.key === "ArrowLeft" || e.key === "ArrowDown"
+                      ? -0.05
+                      : e.key === "ArrowRight" || e.key === "ArrowUp"
+                        ? 0.05
+                        : e.key === "Home"
+                          ? -1
+                          : e.key === "End"
+                            ? 1
+                            : 0;
+                  if (step === 0 || disabled) return;
+                  e.preventDefault();
+                  controls?.seekRatio(Math.max(0, Math.min(1, ratio + step)));
+                }}
+                className="relative ml-1 flex flex-1 cursor-pointer items-center py-4"
               >
-                <div
-                  className="absolute inset-y-0 left-0 rounded-full bg-accent"
-                  style={{ width: `${ratio * 100}%` }}
-                />
+                <div className="relative h-1.5 w-full rounded-full bg-black/15">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-accent-ink"
+                    style={{ width: `${ratio * 100}%` }}
+                  />
+                </div>
               </div>
             </div>
           </div>

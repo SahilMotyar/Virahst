@@ -31,9 +31,6 @@ export function TopNav() {
   const panelRef = useRef<HTMLDivElement>(null);
   const toggleRef = useRef<HTMLButtonElement>(null);
 
-  // Close the sheet on navigation — the route changes underneath it.
-  useEffect(() => setOpen(false), [pathname]);
-
   // Escape closes and returns focus to the toggle; outside clicks just close.
   useEffect(() => {
     if (!open) return;
@@ -136,6 +133,9 @@ export function TopNav() {
                 <Link
                   key={l.href}
                   href={l.href}
+                  // Dismiss on tap: the sheet would otherwise stay open over
+                  // the page it just navigated to.
+                  onClick={() => setOpen(false)}
                   aria-current={active ? "page" : undefined}
                   className={`flex min-h-11 items-center rounded-xl px-3.5 text-[15px] font-medium transition-colors ${
                     active

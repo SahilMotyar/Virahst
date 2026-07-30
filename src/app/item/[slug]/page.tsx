@@ -48,7 +48,7 @@ export default async function ItemPage({
     <main className="mx-auto min-h-screen max-w-5xl px-5 pb-24 pt-24 sm:px-8">
       <Link
         href="/"
-        className="mb-8 inline-flex items-center gap-1.5 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
+        className="mb-6 -ml-3 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M19 12H5M12 19l-7-7 7-7" />

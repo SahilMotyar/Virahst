@@ -89,6 +89,14 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* The canvas is a focusable surface (arrow keys pan it). It sits flush with
+   the viewport, where a normal outline would be clipped, so its focus state
+   is an inset ring. */
+.canvas-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: inset 0 0 0 3px var(--accent-ink);
+}
+
 /* Canvas item captions are hover-revealed, which means "never shown" on a
    touch screen. Where hover genuinely doesn't exist, show them always. */
 @media (hover: none) {

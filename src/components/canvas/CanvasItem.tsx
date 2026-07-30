@@ -40,9 +40,14 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
       // Clear the hover preview before navigating so nothing is mid-unmount
       // during the route transition.
       onClick={() => setHovered(null)}
-      onFocus={() => {
+      onFocus={(e) => {
         setHovered(item.slug);
-        // Bring an off-screen item into view when Tab reaches it.
+        // Bring an off-screen item into view when Tab reaches it — but only
+        // for keyboard focus. On a mouse click, focus lands at mousedown, and
+        // panning here would slide the item out from under the cursor before
+        // mouseup, so the click would resolve against the container and the
+        // item would never open.
+        if (!e.currentTarget.matches(":focus-visible")) return;
         useCameraStore
           .getState()
           .controls?.panToWorld(worldX + ITEM_W / 2, worldY + ITEM_H / 2);

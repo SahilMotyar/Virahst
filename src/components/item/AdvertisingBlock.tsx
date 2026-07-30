@@ -20,7 +20,7 @@ export function AdvertisingBlock({ advertising }: { advertising: Advertising }) 
       aria-label="Original advertising"
       className="rounded-[18px] border border-black/5 bg-bg p-6 sm:p-8"
     >
-      <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-accent">
+      <p className="text-[11px] font-medium uppercase tracking-[0.28em] text-accent-ink">
         The advertising
       </p>
 

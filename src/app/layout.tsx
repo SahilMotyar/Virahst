@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Mukta, Modak } from "next/font/google";
 import "./globals.css";
 import { config } from "@/config";
@@ -40,6 +40,14 @@ export const metadata: Metadata = {
   // insertBefore/removeChild errors on the next commit (e.g. a click). The
   // matching translate="no" on <body> covers other translation engines.
   other: { google: "notranslate" },
+};
+
+export const viewport: Viewport = {
+  // Tints mobile browser chrome to the paper cream so the canvas runs edge to
+  // edge. No maximum-scale / user-scalable: pinch-zoom must stay available.
+  themeColor: "#fbf8f1",
+  colorScheme: "light",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

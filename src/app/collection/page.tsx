@@ -22,7 +22,7 @@ export default function CollectionPage() {
         <h1 className="font-display text-4xl text-ink sm:text-5xl">Collection</h1>
         <p className="mt-2 max-w-prose text-sm text-ink-2">
           {config.tagline} Browse the full archive below, or return to the{" "}
-          <Link href="/" className="text-accent underline-offset-2 hover:underline">
+          <Link href="/" className="text-accent-ink underline-offset-2 hover:underline">
             canvas
           </Link>
           .

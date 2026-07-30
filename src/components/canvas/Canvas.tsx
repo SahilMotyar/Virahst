@@ -38,7 +38,13 @@ export function Canvas() {
       // a page-translator (Google Translate) rewrite text nodes here makes React
       // reconciliation crash with insertBefore/removeChild errors.
       translate="no"
-      className="canvas-no-select absolute inset-0 touch-none overflow-hidden bg-canvas"
+      // Focusable so the arrow/+/-/Home handlers actually receive keys: without
+      // a tab stop of its own, keydown only reached the container when an item
+      // already had focus, so the pan shortcuts did nothing from a cold start.
+      tabIndex={0}
+      // An outline on a viewport-flush element gets clipped, so the focused
+      // state is drawn as an inset ring instead (see .canvas-focus-ring).
+      className="canvas-focus-ring canvas-no-select absolute inset-0 touch-none overflow-hidden bg-canvas"
       aria-label="Vintage archive canvas. Drag or use arrow keys to pan, scroll or pinch to zoom, Home to recentre. Tab through items and press Enter to open one."
       role="application"
     >
