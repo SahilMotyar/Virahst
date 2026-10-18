@@ -96,15 +96,15 @@ export const HERO_CENTER = {
 /**
  * Finite grid bounds (inclusive, in cells) used when INFINITE_WRAP is false.
  * Sized snugly around HERO_HOLE so every item gets exactly one cell with a
- * couple to spare: 11×7 = 77 cells − 15 hero cells = 62 slots for ~60 items
- * (the two left over stay empty at the far corners). Also the region the
+ * couple to spare: 17×9 = 153 cells − 15 hero cells = 138 slots for 128 items
+ * (the spare ones stay empty at the far corners). Also the region the
  * camera pan-clamp keeps in view. Widen if the collection outgrows it.
  */
 export const GRID_BOUNDS = {
-  minCol: -5,
-  maxCol: 5,
-  minRow: -3,
-  maxRow: 3,
+  minCol: -8,
+  maxCol: 8,
+  minRow: -4,
+  maxRow: 4,
 } as const;
 
 /** Extra world-space margin (px) of items mounted beyond the viewport edge. */

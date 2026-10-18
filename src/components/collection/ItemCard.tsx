@@ -4,12 +4,11 @@
  */
 
 import Link from "next/link";
-import type { VintageItem } from "@/data/items";
+import { hasImage, type VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
-import { config } from "@/config";
 
 export function ItemCard({ item }: { item: VintageItem }) {
-  const showImage = config.flags.ASSETS_PRESENT && Boolean(item.image);
+  const showImage = hasImage(item);
 
   return (
     <Link

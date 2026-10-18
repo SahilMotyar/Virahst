@@ -32,7 +32,6 @@ import type {
   ExcalidrawElement,
   FileId,
 } from "@excalidraw/excalidraw/element/types";
-import { config } from "@/config";
 import { items, getItemBySlug, type VintageItem } from "@/data/items";
 import { useInspoStore } from "@/store/inspoStore";
 import { buildItemElements, loadItemImage } from "./itemElements";
@@ -196,7 +195,7 @@ export default function InspoBoard() {
       setRestored(true);
 
       const itemFiles = saved?.itemFiles;
-      if (itemFiles && config.flags.ASSETS_PRESENT) {
+      if (itemFiles) {
         const restored = await Promise.all(
           Object.entries(itemFiles).map(async ([fileId, slug]) => {
             const item = getItemBySlug(slug);

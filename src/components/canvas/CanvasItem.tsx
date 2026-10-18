@@ -14,8 +14,8 @@
 
 import { memo, useState } from "react";
 import Link from "next/link";
-import { ITEM_W, ITEM_H, config } from "@/config";
-import type { VintageItem } from "@/data/items";
+import { ITEM_W, ITEM_H } from "@/config";
+import { hasImage, type VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { useUIStore } from "@/store/uiStore";
 import { useCameraStore } from "@/store/cameraStore";
@@ -32,7 +32,7 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
   const [errored, setErrored] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const setHovered = useUIStore((s) => s.setHovered);
-  const showImage = config.flags.ASSETS_PRESENT && Boolean(item.image) && !errored;
+  const showImage = hasImage(item) && !errored;
 
   return (
     <Link

@@ -12,8 +12,7 @@
 import type { BinaryFileData } from "@excalidraw/excalidraw/types";
 import type { FileId } from "@excalidraw/excalidraw/element/types";
 import type { ExcalidrawElementSkeleton } from "@excalidraw/excalidraw/data/transform";
-import { config } from "@/config";
-import type { VintageItem } from "@/data/items";
+import { hasImage, type VintageItem } from "@/data/items";
 import { CATEGORY_GLYPH, placeholderPalette } from "@/components/ui/Placeholder";
 
 /** Card footprint on the board. Roughly ITEM_W:ITEM_H (4:5), scaled up — the
@@ -71,7 +70,7 @@ function wrapText(text: string, maxChars: number): string {
 export async function loadItemImage(
   item: VintageItem,
 ): Promise<{ dataURL: string; mimeType: BinaryFileData["mimeType"] } | null> {
-  if (!config.flags.ASSETS_PRESENT || !item.image) return null;
+  if (!hasImage(item)) return null;
   try {
     const res = await fetch(item.image);
     if (!res.ok) return null;

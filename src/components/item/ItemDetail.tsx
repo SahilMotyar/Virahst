@@ -4,11 +4,10 @@
  * the canvas). Presentational and server-compatible — no client hooks.
  */
 
-import type { VintageItem } from "@/data/items";
+import { hasImage, type VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { AdvertisingBlock } from "@/components/item/AdvertisingBlock";
 import { SendToInspoButton } from "@/components/item/SendToInspoButton";
-import { config } from "@/config";
 
 function Chip({ children }: { children: React.ReactNode }) {
   return (
@@ -19,7 +18,7 @@ function Chip({ children }: { children: React.ReactNode }) {
 }
 
 export function ItemDetail({ item }: { item: VintageItem }) {
-  const showImage = config.flags.ASSETS_PRESENT && Boolean(item.image);
+  const showImage = hasImage(item);
 
   return (
     <article className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
@@ -75,6 +74,30 @@ export function ItemDetail({ item }: { item: VintageItem }) {
         <div className="mt-6">
           <SendToInspoButton slug={item.slug} />
         </div>
+
+        {item.source && (
+          <p className="mt-8 text-xs leading-relaxed text-ink-2">
+            Image:{" "}
+            <a
+              href={item.source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-ink"
+            >
+              {item.source.credit}
+            </a>
+            . License:{" "}
+            <a
+              href={item.source.licenseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline underline-offset-2 hover:text-ink"
+            >
+              {item.source.license}
+            </a>
+            .
+          </p>
+        )}
       </div>
     </article>
   );
