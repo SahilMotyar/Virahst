@@ -1,0 +1,66 @@
+name: Suggest an item
+description: Suggest something for the archive — an old ad, packet, tin, label, poster, sign or ticket.
+title: "[Item]: "
+labels: ["item suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for helping build Virasat! Please only share pictures you took yourself, or that are
+        public domain or openly licensed (for example from Wikimedia Commons).
+  - type: input
+    id: name
+    attributes:
+      label: Item name
+      placeholder: e.g. Gold Spot bottle
+    validations:
+      required: true
+  - type: input
+    id: brand
+    attributes:
+      label: Brand
+      placeholder: e.g. Parle
+  - type: input
+    id: era
+    attributes:
+      label: Era
+      description: Roughly when it was made or advertised.
+      placeholder: e.g. 1970s
+  - type: input
+    id: region
+    attributes:
+      label: Region
+      description: Where in India it comes from, if you know.
+      placeholder: e.g. Bombay
+  - type: textarea
+    id: image
+    attributes:
+      label: Image link or upload
+      description: Paste a link to the image, or drag the image file into this box to upload it.
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Where the image came from, and its license
+      description: |
+        A link to the original, who made it, and its license (for example "Public domain",
+        "CC BY-SA 4.0", or "I took this photo myself").
+      placeholder: |
+        https://commons.wikimedia.org/wiki/File:...
+        By: ...
+        License: CC BY-SA 4.0
+    validations:
+      required: true
+  - type: textarea
+    id: story
+    attributes:
+      label: The story behind it
+      description: What was it, who used it, what did the ad say? Anything you remember helps.
+  - type: checkboxes
+    id: rights
+    attributes:
+      label: Permission
+      options:
+        - label: I took this picture myself, or it is public domain or openly licensed.
+          required: true

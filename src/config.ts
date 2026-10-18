@@ -36,7 +36,7 @@ export const config = {
   },
   support: {
     /** UPI VPA, e.g. "name@okbank". The UPI card is hidden until this is set. */
-    upiId: "" as string,
+    upiId: "virahst@upi" as string,
     upiPayeeName: "Virasat",
     /** For supporters outside India. The Ko-fi card is hidden while "". */
     kofiUrl: "" as string,

@@ -47,6 +47,18 @@ export default async function SupportPage() {
         more of India’s old everyday design.
       </p>
 
+      <div className="mt-8 max-w-prose rounded-2xl bg-accent/10 px-5 py-4">
+        <p className="font-semibold text-accent-ink">My promise: no ads, ever.</p>
+        <p className="mt-1.5 text-[15px] leading-relaxed text-ink">
+          Virasat will stay free and ad-free forever. What I really need is help
+          with two things:{" "}
+          <Link href="/about#help" className={textLink}>
+            collecting old ads, packets, labels, posters and their pictures
+          </Link>
+          , and a little money to keep it going.
+        </p>
+      </div>
+
       {(upiUrl || kofiUrl) && (
         <div
           className={`mt-10 grid items-start gap-5 ${

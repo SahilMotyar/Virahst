@@ -205,8 +205,8 @@ export default function AboutPage() {
           Support
         </h2>
         <p className={`mt-4 ${body}`}>
-          Virasat is free and has no ads. If you like it, you can help me keep
-          building it.
+          Virasat is free and has no ads, and it will stay ad-free forever. If
+          you like it, you can help me keep building it.
         </p>
         <Link href="/support" className={`${pill.primary} mt-5`}>
           Support Virasat

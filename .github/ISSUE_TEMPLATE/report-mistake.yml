@@ -1,0 +1,30 @@
+name: Report a mistake
+description: A wrong year, a wrong name, a missing story, a wrong picture or a broken credit.
+title: "[Fix]: "
+labels: ["mistake"]
+body:
+  - type: input
+    id: item
+    attributes:
+      label: Item link
+      description: The page with the mistake.
+      placeholder: https://virahst.netlify.app/item/...
+    validations:
+      required: true
+  - type: textarea
+    id: wrong
+    attributes:
+      label: What's wrong
+    validations:
+      required: true
+  - type: textarea
+    id: correct
+    attributes:
+      label: The correct information
+    validations:
+      required: true
+  - type: textarea
+    id: source
+    attributes:
+      label: Source
+      description: How do you know? A link, a book, a photo of the packet — anything that helps check it.

@@ -2,6 +2,7 @@
   "name": "virasat",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "scripts": {
     "copy:excalidraw-fonts": "node scripts/copy-excalidraw-fonts.mjs",
     "predev": "npm run copy:excalidraw-fonts",
@@ -11,7 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "gen:playlist": "node scripts/gen-playlist.mjs",
-    "optimize:images": "node scripts/optimize-images.mjs",
+    "thumbs": "node scripts/optimize-images.mjs",
     "fetch:items": "node scripts/fetch-item-images.mjs",
     "fetch:assets": "node --experimental-strip-types scripts/fetch-assets.mjs"
   },
