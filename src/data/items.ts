@@ -3324,6 +3324,16 @@ export function getItemBySlug(slug: string): VintageItem | undefined {
  * `source`) always have a file under /public/items; placeholders only do once
  * the global ASSETS_PRESENT flag is flipped.
  */
+/** Small WebP for the canvas and cards. Placeholders keep their original path. */
+export function thumbSrc(item: VintageItem): string {
+  return item.source ? `/items/thumb/${item.slug}.webp` : item.image;
+}
+
+/** Detail-view WebP (1000px). Placeholders keep their original path. */
+export function fullSrc(item: VintageItem): string {
+  return item.source ? `/items/${item.slug}.webp` : item.image;
+}
+
 export function hasImage(item: VintageItem): boolean {
   return Boolean(item.image) && (Boolean(item.source) || config.flags.ASSETS_PRESENT);
 }

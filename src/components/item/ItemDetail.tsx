@@ -4,7 +4,7 @@
  * the canvas). Presentational and server-compatible — no client hooks.
  */
 
-import { hasImage, type VintageItem } from "@/data/items";
+import { fullSrc, hasImage, type VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { AdvertisingBlock } from "@/components/item/AdvertisingBlock";
 import { SendToInspoButton } from "@/components/item/SendToInspoButton";
@@ -27,7 +27,7 @@ export function ItemDetail({ item }: { item: VintageItem }) {
         {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element -- assets mostly absent in Phase 1/2; placeholder is the fallback.
           <img
-            src={item.image}
+            src={fullSrc(item)}
             alt={item.nameEn}
             className="h-full w-full object-contain p-6"
           />

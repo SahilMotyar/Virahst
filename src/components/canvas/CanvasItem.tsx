@@ -15,7 +15,7 @@
 import { memo, useState } from "react";
 import Link from "next/link";
 import { ITEM_W, ITEM_H } from "@/config";
-import { hasImage, type VintageItem } from "@/data/items";
+import { hasImage, thumbSrc, type VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
 import { useUIStore } from "@/store/uiStore";
 import { useCameraStore } from "@/store/cameraStore";
@@ -30,7 +30,6 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
   // While ASSETS_PRESENT is false, skip <img> entirely (no 404s) and render the
   // placeholder directly. With assets present, attempt load and fall back on error.
   const [errored, setErrored] = useState(false);
-  const [loaded, setLoaded] = useState(false);
   const setHovered = useUIStore((s) => s.setHovered);
   const showImage = hasImage(item) && !errored;
 
@@ -75,16 +74,14 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
         {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element -- assets are mostly absent during Phase 1; a raw <img> with an onError → <Placeholder> fallback is the intended strategy. next/image errors on missing files.
           <img
-            src={item.image}
+            src={thumbSrc(item)}
             alt=""
             width={ITEM_W}
             height={ITEM_H}
-            loading="lazy"
+            decoding="async"
             draggable={false}
-            onLoad={() => setLoaded(true)}
             onError={() => setErrored(true)}
-            className="h-full w-full object-contain transition-opacity duration-300"
-            style={{ opacity: loaded ? 1 : 0 }}
+            className="h-full w-full object-contain"
           />
         ) : (
           <Placeholder

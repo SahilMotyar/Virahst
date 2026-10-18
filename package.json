@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint",
     "gen:playlist": "node scripts/gen-playlist.mjs",
+    "optimize:images": "node scripts/optimize-images.mjs",
     "fetch:items": "node scripts/fetch-item-images.mjs",
     "fetch:assets": "node --experimental-strip-types scripts/fetch-assets.mjs",
     "fetch:items": "node scripts/fetch-item-images.mjs"

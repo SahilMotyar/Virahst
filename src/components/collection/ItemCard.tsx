@@ -4,7 +4,7 @@
  */
 
 import Link from "next/link";
-import { hasImage, type VintageItem } from "@/data/items";
+import { hasImage, thumbSrc, type VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
 
 export function ItemCard({ item }: { item: VintageItem }) {
@@ -19,8 +19,9 @@ export function ItemCard({ item }: { item: VintageItem }) {
         {showImage ? (
           // eslint-disable-next-line @next/next/no-img-element -- assets mostly absent; placeholder is the fallback.
           <img
-            src={item.image}
+            src={thumbSrc(item)}
             alt={item.nameEn}
+            decoding="async"
             loading="lazy"
             className="h-full w-full object-contain p-2 transition-transform duration-200 group-hover:scale-[1.03]"
           />
