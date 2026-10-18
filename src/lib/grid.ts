@@ -15,7 +15,7 @@ import {
   config,
 } from "@/config";
 import { hashStringToInt, seededJitter, mulberry32 } from "@/lib/seededRandom";
-import { items } from "@/data/items";
+import { items, hasImage } from "@/data/items";
 
 export interface WorldPos {
   x: number;
@@ -72,12 +72,24 @@ const finiteCellToIndex: Map<string, number> = (() => {
     return da - db || a.row - b.row || a.col - b.col;
   });
 
-  const perm = items.map((_, i) => i);
-  const rand = mulberry32(hashStringToInt("virasat:layout:v1"));
-  for (let i = perm.length - 1; i > 0; i--) {
-    const j = Math.floor(rand() * (i + 1));
-    [perm[i], perm[j]] = [perm[j], perm[i]];
-  }
+  // Centre-out priority: items that have real images come first, then the rest
+  // by popularity. Each tier is seeded-shuffled so brands don't clump, but the
+  // tiers themselves stay ordered — the middle of the field is always the best
+  // stuff, which is also what loads first.
+  const rand = mulberry32(hashStringToInt("virasat:layout:v2"));
+  const shuffle = (a: number[]) => {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(rand() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const all = items.map((_, i) => i);
+  const withImage = shuffle(all.filter((i) => hasImage(items[i])));
+  const popular = all
+    .filter((i) => !hasImage(items[i]))
+    .sort((a, b) => items[b].favorites - items[a].favorites);
+  const perm = [...withImage, ...popular];
 
   const n = Math.min(items.length, cells.length);
   for (let k = 0; k < n; k++) {

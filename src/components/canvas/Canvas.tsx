@@ -12,13 +12,21 @@
  * (`ready`), so the user never sees the un-centred SSR frame at top-left.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useCameraStore } from "@/store/cameraStore";
 import { useCanvasCamera } from "@/components/canvas/useCanvasCamera";
 import { useVirtualization } from "@/components/canvas/useVirtualization";
 import { CanvasItem } from "@/components/canvas/CanvasItem";
 import { HeroBlock } from "@/components/canvas/HeroBlock";
-import { INITIAL_SCALE } from "@/config";
+import { INITIAL_SCALE, HERO_CENTER, ITEM_W, ITEM_H } from "@/config";
+
+/** Per-tile stagger (ms) for the first paint, nearest-to-centre first. */
+const STAGGER_MS = 30;
+const MAX_DELAY_MS = 1600;
+/** After this, tiles mounting from panning load immediately. */
+const WARM_MS = 2600;
+/** The nearest few tiles load at high fetch priority. */
+const HIGH_PRIORITY_COUNT = 14;
 
 export function Canvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -30,6 +38,20 @@ export function Canvas() {
 
   const range = useCameraStore((s) => s.range);
   const visible = useVirtualization(range);
+
+  // First paint: reveal images progressively, nearest the centre first. Once
+  // the opening burst is over, newly panned-in tiles skip the stagger.
+  const [warm, setWarm] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setWarm(true), WARM_MS);
+    return () => clearTimeout(t);
+  }, []);
+  const rankByKey = useMemo(() => {
+    const dist = (v: { worldX: number; worldY: number }) =>
+      Math.hypot(v.worldX + ITEM_W / 2 - HERO_CENTER.x, v.worldY + ITEM_H / 2 - HERO_CENTER.y);
+    const sorted = [...visible].sort((a, b) => dist(a) - dist(b));
+    return new Map(sorted.map((v, i) => [v.key, i]));
+  }, [visible]);
 
   return (
     <div
@@ -64,6 +86,10 @@ export function Canvas() {
             item={v.item}
             worldX={v.worldX}
             worldY={v.worldY}
+            loadDelay={
+              warm ? 0 : Math.min((rankByKey.get(v.key) ?? 0) * STAGGER_MS, MAX_DELAY_MS)
+            }
+            highPriority={(rankByKey.get(v.key) ?? 99) < HIGH_PRIORITY_COUNT}
           />
         ))}
       </div>

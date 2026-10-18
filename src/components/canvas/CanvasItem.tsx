@@ -12,7 +12,7 @@
  * so keyboard focus is never left off-screen (WCAG 2.4.11).
  */
 
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import Link from "next/link";
 import { ITEM_W, ITEM_H } from "@/config";
 import { hasImage, thumbSrc, type VintageItem } from "@/data/items";
@@ -24,14 +24,33 @@ interface CanvasItemProps {
   item: VintageItem;
   worldX: number;
   worldY: number;
+  /** ms to wait before requesting the image (first-paint stagger). */
+  loadDelay?: number;
+  /** Nearest-to-centre tiles ask the browser to fetch these first. */
+  highPriority?: boolean;
 }
 
-function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
+function CanvasItemImpl({
+  item,
+  worldX,
+  worldY,
+  loadDelay = 0,
+  highPriority = false,
+}: CanvasItemProps) {
   // While ASSETS_PRESENT is false, skip <img> entirely (no 404s) and render the
   // placeholder directly. With assets present, attempt load and fall back on error.
   const [errored, setErrored] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [armed, setArmed] = useState(loadDelay <= 0);
+  useEffect(() => {
+    if (armed) return;
+    const t = setTimeout(() => setArmed(true), loadDelay);
+    return () => clearTimeout(t);
+  }, [armed, loadDelay]);
   const setHovered = useUIStore((s) => s.setHovered);
   const showImage = hasImage(item) && !errored;
+  // Until the stagger fires (or the file lands) show the soft placeholder tile.
+  const showPlaceholder = !showImage || !armed || !loaded;
 
   return (
     <Link
@@ -71,23 +90,27 @@ function CanvasItemImpl({ item, worldX, worldY }: CanvasItemProps) {
           boxShadow: "0 1px 2px rgba(26,18,8,.05), 0 6px 16px rgba(26,18,8,.07)",
         }}
       >
-        {showImage ? (
-          // eslint-disable-next-line @next/next/no-img-element -- assets are mostly absent during Phase 1; a raw <img> with an onError → <Placeholder> fallback is the intended strategy. next/image errors on missing files.
+        {showPlaceholder && (
+          <Placeholder
+            id={item.id}
+            nameEn={item.nameEn}
+            category={item.category}
+          />
+        )}
+        {showImage && armed && (
+          // eslint-disable-next-line @next/next/no-img-element -- raw <img> with onError → <Placeholder> fallback is the intended strategy; next/image errors on missing files.
           <img
             src={thumbSrc(item)}
             alt=""
             width={ITEM_W}
             height={ITEM_H}
             decoding="async"
+            fetchPriority={highPriority ? "high" : "low"}
             draggable={false}
+            onLoad={() => setLoaded(true)}
             onError={() => setErrored(true)}
-            className="h-full w-full object-contain"
-          />
-        ) : (
-          <Placeholder
-            id={item.id}
-            nameEn={item.nameEn}
-            category={item.category}
+            className="absolute inset-0 h-full w-full object-contain transition-opacity duration-200"
+            style={{ opacity: loaded ? 1 : 0 }}
           />
         )}
       </div>
