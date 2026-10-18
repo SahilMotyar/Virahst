@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Fixed top navigation: logo mark + wordmark, nav links, and the inspo link.
+ * Fixed top navigation: logo mark + wordmark, nav links, and a Support pill.
  * Links to Phase-3/5 routes are present but those pages are stubs for now.
  *
  * Client-side only so it can stand down on /inspo, where Excalidraw owns the
@@ -23,7 +23,11 @@ const LINKS = [
   { label: "Community", href: "/community" },
   { label: "Feed", href: "/feed" },
   { label: "Inspo", href: "/inspo" },
+  { label: "About", href: "/about" },
 ];
+
+/** Last item, drawn as a soft marigold pill so it stands out a little. */
+const SUPPORT = { label: "Support", href: "/support" };
 
 export function TopNav() {
   const pathname = usePathname();
@@ -82,7 +86,7 @@ export function TopNav() {
               key={l.href}
               href={l.href}
               aria-current={active ? "page" : undefined}
-              className={`flex min-h-11 items-center rounded-full px-3 transition-colors hover:text-ink ${
+              className={`flex min-h-11 items-center rounded-full px-2 transition-colors hover:text-ink lg:px-3 ${
                 active ? "text-ink" : ""
               }`}
             >
@@ -90,6 +94,16 @@ export function TopNav() {
             </Link>
           );
         })}
+        {/* 44px-tall hit area around a smaller visual pill. */}
+        <Link
+          href={SUPPORT.href}
+          aria-current={pathname === SUPPORT.href ? "page" : undefined}
+          className="group ml-1 flex min-h-11 items-center rounded-full"
+        >
+          <span className="rounded-full bg-accent/10 px-3.5 py-1.5 text-accent-ink transition-colors group-hover:bg-accent/20">
+            {SUPPORT.label}
+          </span>
+        </Link>
       </div>
 
       {/* Mobile menu button + sheet */}
@@ -147,6 +161,14 @@ export function TopNav() {
                 </Link>
               );
             })}
+            <Link
+              href={SUPPORT.href}
+              onClick={() => setOpen(false)}
+              aria-current={pathname === SUPPORT.href ? "page" : undefined}
+              className="mt-1 flex min-h-11 items-center rounded-xl bg-accent/10 px-3.5 text-[15px] font-medium text-accent-ink transition-colors hover:bg-accent/20"
+            >
+              {SUPPORT.label}
+            </Link>
           </div>
         )}
       </div>

@@ -79,6 +79,19 @@ export function HeroBlock() {
       <p className="mt-6 text-xs text-ink-2 opacity-60 sm:text-[11px]">
         by {config.handle}
       </p>
+      {/* Full ink-2 rather than the faded credit above: these are links, and
+          at 60% opacity they'd drop below readable contrast. */}
+      <p className="mt-2 text-xs text-ink-2 sm:text-[11px]">
+        Work in progress
+        <span className="mx-1.5 opacity-40" aria-hidden>·</span>
+        <Link href="/about" className="underline decoration-ink-2/30 underline-offset-2 transition-colors hover:text-ink">
+          About
+        </Link>
+        <span className="mx-1.5 opacity-40" aria-hidden>·</span>
+        <Link href="/support" className="text-accent-ink underline decoration-accent/40 underline-offset-2 transition-colors hover:decoration-accent-ink">
+          Support <span aria-hidden>♥</span>
+        </Link>
+      </p>
     </div>
 
       <Modal
@@ -118,6 +131,15 @@ export function HeroBlock() {
         <p className="mt-3 text-xs text-ink-2/70">
           Images and ad copy here are placeholders — real, properly-sourced
           archival material gets added over time.
+        </p>
+        <p className="mt-4">
+          <Link
+            href="/about"
+            onClick={() => setInfo(null)}
+            className="font-medium text-accent-ink underline-offset-2 hover:underline"
+          >
+            Read the full story →
+          </Link>
         </p>
       </Modal>
     </>

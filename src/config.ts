@@ -19,6 +19,29 @@ export const config = {
   /** Credit line in the hero block. */
   handle: "@virasat",
 
+  // --- Contact & support -------------------------------------------------
+  // Any value left as "" is hidden on the site. (`as string` keeps the
+  // `as const` below from typing an empty value as the literal "".)
+  contact: {
+    /**
+     * Email, kept in two parts so the full address never appears in the
+     * server-rendered HTML — the About page joins them in the browser.
+     */
+    emailUser: "motyarsahil1234",
+    emailDomain: "gmail.com",
+    githubProfile: "https://github.com/SahilMotyar",
+    /** Repo for issues/suggestions; "Open an issue" links to `<repo>/issues`. */
+    githubRepo: "https://github.com/SahilMotyar/Virahst",
+    instagram: "" as string,
+  },
+  support: {
+    /** UPI VPA, e.g. "name@okbank". The UPI card is hidden until this is set. */
+    upiId: "" as string,
+    upiPayeeName: "Virasat",
+    /** For supporters outside India. The Ko-fi card is hidden while "". */
+    kofiUrl: "" as string,
+  },
+
   // --- Music (Phase 4) ---------------------------------------------------
   spotifyPlaylistUri:
     process.env.NEXT_PUBLIC_SPOTIFY_PLAYLIST_URI ??

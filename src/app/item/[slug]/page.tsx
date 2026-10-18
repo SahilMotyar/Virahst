@@ -45,7 +45,7 @@ export default async function ItemPage({
   if (!item) notFound();
 
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-5 pb-24 pt-24 sm:px-8">
+    <main className="mx-auto min-h-screen max-w-5xl px-5 pb-40 pt-24 sm:px-8">
       <Link
         href="/"
         className="mb-6 -ml-3 inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-ink-2 transition-colors hover:text-ink"
@@ -56,6 +56,15 @@ export default async function ItemPage({
         Back to the archive
       </Link>
       <ItemDetail item={item} />
+
+      <p className="mt-16 border-t border-black/5 pt-6 text-center">
+        <Link
+          href="/support"
+          className="inline-flex min-h-11 items-center rounded-full px-4 text-sm font-medium text-accent-ink transition-colors hover:bg-accent/10"
+        >
+          Like Virasat? Help it grow →
+        </Link>
+      </p>
     </main>
   );
 }

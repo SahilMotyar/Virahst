@@ -22,19 +22,42 @@ export function ItemDetail({ item }: { item: VintageItem }) {
 
   return (
     <article className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)]">
-      {/* Image / placeholder */}
-      <div className="aspect-[4/5] w-full overflow-hidden rounded-[18px] bg-white shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.06)]">
-        {showImage ? (
-          // eslint-disable-next-line @next/next/no-img-element -- assets mostly absent in Phase 1/2; placeholder is the fallback.
-          <img
-            src={fullSrc(item)}
-            alt={item.nameEn}
-            className="h-full w-full object-contain p-6"
-          />
-        ) : (
-          <Placeholder id={item.id} nameEn={item.nameEn} category={item.category} />
+      {/* Image / placeholder, with the licence credit directly beneath it */}
+      <figure className="min-w-0">
+        <div className="aspect-[4/5] w-full overflow-hidden rounded-[18px] bg-white shadow-[0_1px_2px_rgba(0,0,0,.05),0_8px_24px_rgba(0,0,0,.06)]">
+          {showImage ? (
+            // eslint-disable-next-line @next/next/no-img-element -- assets mostly absent in Phase 1/2; placeholder is the fallback.
+            <img
+              src={fullSrc(item)}
+              alt={item.nameEn}
+              className="h-full w-full object-contain p-6"
+            />
+          ) : (
+            <Placeholder id={item.id} nameEn={item.nameEn} category={item.category} />
+          )}
+        </div>
+        {item.source && (
+          <figcaption className="mt-2.5 break-words px-1 text-xs leading-relaxed text-ink-2">
+            <a
+              href={item.source.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-ink-2/30 underline-offset-2 hover:text-ink"
+            >
+              {item.source.credit}
+            </a>
+            {" · "}
+            <a
+              href={item.source.licenseUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline decoration-ink-2/30 underline-offset-2 hover:text-ink"
+            >
+              {item.source.license}
+            </a>
+          </figcaption>
         )}
-      </div>
+      </figure>
 
       {/* Metadata + advertising */}
       <div className="flex flex-col">
@@ -74,30 +97,6 @@ export function ItemDetail({ item }: { item: VintageItem }) {
         <div className="mt-6">
           <SendToInspoButton slug={item.slug} />
         </div>
-
-        {item.source && (
-          <p className="mt-8 text-xs leading-relaxed text-ink-2">
-            Image:{" "}
-            <a
-              href={item.source.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-ink"
-            >
-              {item.source.credit}
-            </a>
-            . License:{" "}
-            <a
-              href={item.source.licenseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline underline-offset-2 hover:text-ink"
-            >
-              {item.source.license}
-            </a>
-            .
-          </p>
-        )}
       </div>
     </article>
   );
