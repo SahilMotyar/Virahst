@@ -59,12 +59,6 @@ export const config = {
     INFINITE_WRAP: false,
     /** Master switch for the ambient music bar. */
     MUSIC_ENABLED: true,
-    /**
-     * Whether real item images exist under /public/items. While false, items
-     * render <Placeholder> directly and skip the <img> entirely — avoiding a
-     * storm of 404 requests. Flip to true once assets are dropped in.
-     */
-    ASSETS_PRESENT: false,
   },
 } as const;
 

@@ -5,14 +5,14 @@
   "license": "MIT",
   "scripts": {
     "copy:excalidraw-fonts": "node scripts/copy-excalidraw-fonts.mjs",
-    "predev": "npm run copy:excalidraw-fonts",
+    "predev": "npm run copy:excalidraw-fonts && node scripts/image-manifest.mjs",
     "dev": "next dev",
-    "prebuild": "npm run copy:excalidraw-fonts",
+    "prebuild": "npm run copy:excalidraw-fonts && node scripts/image-manifest.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
     "gen:playlist": "node scripts/gen-playlist.mjs",
-    "thumbs": "node scripts/optimize-images.mjs",
+    "thumbs": "node scripts/optimize-images.mjs && node scripts/image-manifest.mjs",
     "fetch:items": "node scripts/fetch-item-images.mjs",
     "fetch:assets": "node --experimental-strip-types scripts/fetch-assets.mjs"
   },

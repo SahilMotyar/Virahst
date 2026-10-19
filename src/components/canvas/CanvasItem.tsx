@@ -14,6 +14,7 @@
 
 import { memo, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ITEM_W, ITEM_H } from "@/config";
 import { hasImage, thumbSrc, type VintageItem } from "@/data/items";
 import { Placeholder } from "@/components/ui/Placeholder";
@@ -37,8 +38,8 @@ function CanvasItemImpl({
   loadDelay = 0,
   highPriority = false,
 }: CanvasItemProps) {
-  // While ASSETS_PRESENT is false, skip <img> entirely (no 404s) and render the
-  // placeholder directly. With assets present, attempt load and fall back on error.
+  // Items without a picture (see data/image-manifest.json) skip the <img>
+  // entirely and render the placeholder; a failed load falls back to it too.
   const [errored, setErrored] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [armed, setArmed] = useState(loadDelay <= 0);
@@ -48,18 +49,27 @@ function CanvasItemImpl({
     return () => clearTimeout(t);
   }, [armed, loadDelay]);
   const setHovered = useUIStore((s) => s.setHovered);
+  const router = useRouter();
+  const href = `/item/${item.slug}`;
+  // Viewport prefetching is off (see the Link below), so warm the item page
+  // once someone shows intent: hovering it, or tabbing to it.
+  const prefetch = () => router.prefetch(href);
   const showImage = hasImage(item) && !errored;
   // Until the stagger fires (or the file lands) show the soft placeholder tile.
   const showPlaceholder = !showImage || !armed || !loaded;
 
   return (
     <Link
-      href={`/item/${item.slug}`}
+      href={href}
+      // No viewport prefetch: on a canvas, panning sweeps dozens of links
+      // through the viewport, and each would fetch + parse its page mid-gesture.
+      prefetch={false}
       // Clear the hover preview before navigating so nothing is mid-unmount
       // during the route transition.
       onClick={() => setHovered(null)}
       onFocus={(e) => {
         setHovered(item.slug);
+        prefetch();
         // Bring an off-screen item into view when Tab reaches it — but only
         // for keyboard focus. On a mouse click, focus lands at mousedown, and
         // panning here would slide the item out from under the cursor before
@@ -71,14 +81,19 @@ function CanvasItemImpl({
           .controls?.panToWorld(worldX + ITEM_W / 2, worldY + ITEM_H / 2);
       }}
       onBlur={() => setHovered(null)}
-      onMouseEnter={() => setHovered(item.slug)}
+      onMouseEnter={() => {
+        setHovered(item.slug);
+        prefetch();
+      }}
       onMouseLeave={() => setHovered(null)}
       className="group absolute flex flex-col items-center rounded-[14px] select-none"
       style={{
         left: worldX,
         top: worldY,
         width: ITEM_W,
-        contentVisibility: "auto",
+        // No content-visibility: auto here. With the whole field mounted, it
+        // made the browser re-check every tile's visibility on each pan/zoom
+        // frame (measured: ~2x worse frame times on slower CPUs).
       }}
     >
       <div

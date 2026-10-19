@@ -41,8 +41,20 @@ import { useCameraStore, type CellRange } from "@/store/cameraStore";
 const clamp = (v: number, lo: number, hi: number) =>
   Math.min(hi, Math.max(lo, v));
 
-/** Min velocity (px/frame) below which momentum stops. */
-const MIN_VELOCITY = 0.05;
+/** Glide speed (px/ms) below which momentum stops. */
+const MIN_SPEED = 0.01;
+/** MOMENTUM_DECAY is defined per 60Hz frame; it is rescaled to real frame time. */
+const FRAME_MS = 1000 / 60;
+/**
+ * Release velocity is averaged over this much of the drag's tail (ms). A single
+ * pointermove is too noisy: on high-rate mice two events can land 1ms apart,
+ * and dividing by that made the glide lurch forward on release.
+ */
+const FLICK_WINDOW = 80;
+/** If the pointer rested this long (ms) before release, there is no flick. */
+const FLICK_STALE = 60;
+/** Hover comes back this long (ms) after the last wheel event. */
+const WHEEL_IDLE_MS = 150;
 /** How often (ms) to push the scale readout into the store. */
 const SCALE_INTERVAL = 60;
 /** Pointer travel (px) under which a press counts as a tap, not a drag. */
@@ -91,6 +103,10 @@ export function useCanvasCamera(
     // Cached viewport dimensions — never read during a pan (avoids reflow).
     let viewW = container.clientWidth || window.innerWidth;
     let viewH = container.clientHeight || window.innerHeight;
+    // Container's page offset, cached for the same reason: reading
+    // getBoundingClientRect() on every wheel/pinch event can force a sync
+    // style + layout pass mid-gesture.
+    let origin = container.getBoundingClientRect();
 
     // --- pan clamp (finite field only) ----------------------------------
     // Keeps at least EDGE_MARGIN px of the field on screen per axis; when the
@@ -202,19 +218,25 @@ export function useCanvasCamera(
     onReady?.();
 
     // --- momentum loop -------------------------------------------------
-    const velocity = { x: 0, y: 0 };
+    // Time-based, so a flick glides the same on 60Hz and 120Hz screens: the
+    // old per-frame step ran twice as fast (and braked twice as hard) at 120Hz.
+    const velocity = { x: 0, y: 0 }; // px/ms
     let momentumRAF = 0;
+    let lastStep = 0;
     const stopMomentum = () => {
       if (momentumRAF) {
         cancelAnimationFrame(momentumRAF);
         momentumRAF = 0;
       }
     };
-    const momentumStep = () => {
-      velocity.x *= MOMENTUM_DECAY;
-      velocity.y *= MOMENTUM_DECAY;
-      cam.current.x += velocity.x;
-      cam.current.y += velocity.y;
+    const momentumStep = (now: number) => {
+      const dt = clamp(now - lastStep, 0, 32);
+      lastStep = now;
+      const decay = Math.pow(MOMENTUM_DECAY, dt / FRAME_MS);
+      velocity.x *= decay;
+      velocity.y *= decay;
+      cam.current.x += velocity.x * dt;
+      cam.current.y += velocity.y * dt;
       const freeX = cam.current.x;
       const freeY = cam.current.y;
       apply();
@@ -223,7 +245,7 @@ export function useCanvasCamera(
       if (cam.current.x !== freeX) velocity.x = 0;
       if (cam.current.y !== freeY) velocity.y = 0;
       syncRange();
-      if (Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY) {
+      if (Math.hypot(velocity.x, velocity.y) > MIN_SPEED) {
         momentumRAF = requestAnimationFrame(momentumStep);
       } else {
         momentumRAF = 0;
@@ -255,6 +277,22 @@ export function useCanvasCamera(
     let dragging = false;
     let last = { x: 0, y: 0, t: 0 };
     let pinchDist = 0;
+    // Recent pointer positions during a drag, for the release velocity.
+    let samples: { x: number; y: number; t: number }[] = [];
+    const flickVelocity = () => {
+      const lastSample = samples[samples.length - 1];
+      if (!lastSample || performance.now() - lastSample.t > FLICK_STALE) {
+        return { x: 0, y: 0 };
+      }
+      const first =
+        samples.find((s) => lastSample.t - s.t <= FLICK_WINDOW) ?? lastSample;
+      const dt = lastSample.t - first.t;
+      if (dt < 8) return { x: 0, y: 0 };
+      return {
+        x: (lastSample.x - first.x) / dt,
+        y: (lastSample.y - first.y) / dt,
+      };
+    };
     // Tap tracking (to tell a click from a drag).
     let tapStart = { x: 0, y: 0, t: 0 };
     let movedFar = false;
@@ -274,6 +312,7 @@ export function useCanvasCamera(
         movedFar = false;
         velocity.x = 0;
         velocity.y = 0;
+        samples = [{ x: e.clientX, y: e.clientY, t: performance.now() }];
         container.style.cursor = "grabbing";
         // NB: pointer-events on the layer stay ON until the pointer actually
         // travels (see onPointerMove). Killing them here would make mousedown
@@ -304,8 +343,7 @@ export function useCanvasCamera(
         if (pinchDist > 0) {
           const midX = (pts[0].x + pts[1].x) / 2;
           const midY = (pts[0].y + pts[1].y) / 2;
-          const rect = container.getBoundingClientRect();
-          zoomAt(midX - rect.left, midY - rect.top, dist / pinchDist);
+          zoomAt(midX - origin.left, midY - origin.top, dist / pinchDist);
         }
         pinchDist = dist;
         return;
@@ -315,12 +353,10 @@ export function useCanvasCamera(
       const now = performance.now();
       const dx = e.clientX - last.x;
       const dy = e.clientY - last.y;
-      const dt = Math.max(1, now - last.t);
       cam.current.x += dx;
       cam.current.y += dy;
-      // Velocity in px/frame (~16ms), used for the flick.
-      velocity.x = (dx / dt) * 16;
-      velocity.y = (dy / dt) * 16;
+      samples.push({ x: e.clientX, y: e.clientY, t: now });
+      while (samples.length > 2 && now - samples[0].t > FLICK_WINDOW * 2) samples.shift();
       last = { x: e.clientX, y: e.clientY, t: now };
       if (
         !movedFar &&
@@ -352,15 +388,21 @@ export function useCanvasCamera(
         container.style.cursor = "grab";
         const isTap =
           wasDragging && !movedFar && performance.now() - tapStart.t < TAP_TIME;
+        const v = wasDragging ? flickVelocity() : { x: 0, y: 0 };
+        velocity.x = v.x;
+        velocity.y = v.y;
         if (
           wasDragging &&
           !isTap &&
           !reducedMotion &&
-          Math.hypot(velocity.x, velocity.y) > MIN_VELOCITY
+          Math.hypot(velocity.x, velocity.y) > MIN_SPEED
         ) {
           // Flick → momentum (skipped under reduced-motion). The layer stays
           // non-interactive until the glide settles (momentumStep restores it).
           stopMomentum();
+          // The glide picks up from the last pointer sample, so its first
+          // frame continues the drag rather than jumping or pausing.
+          lastStep = samples[samples.length - 1]?.t ?? performance.now();
           momentumRAF = requestAnimationFrame(momentumStep);
         } else {
           // Every other way a gesture can end — tap, slow drag, or the last
@@ -373,19 +415,32 @@ export function useCanvasCamera(
         // Dropped from pinch back to single-finger pan.
         const [p] = [...pointers.values()];
         last = { x: p.x, y: p.y, t: performance.now() };
+        samples = [{ ...last }];
         dragging = true;
       }
     };
 
     // --- wheel: trackpad pan, ctrl/⌘ = zoom ----------------------------
+    // Wheel/trackpad gestures slide tiles under a still cursor, just like a
+    // drag does, so suspend hover the same way and restore it once the wheel
+    // has been quiet for a moment.
+    let wheelIdle = 0;
+    const suspendHoverWhileWheeling = () => {
+      setLayerInteractive(false);
+      window.clearTimeout(wheelIdle);
+      wheelIdle = window.setTimeout(() => {
+        if (pointers.size === 0 && !momentumRAF) setLayerInteractive(true);
+      }, WHEEL_IDLE_MS);
+    };
+
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
       stopMomentum();
+      suspendHoverWhileWheeling();
       if (e.ctrlKey || e.metaKey) {
         // Pinch-to-zoom on macOS arrives as ctrl+wheel.
-        const rect = container.getBoundingClientRect();
         const factor = Math.exp(-e.deltaY * 0.01);
-        zoomAt(e.clientX - rect.left, e.clientY - rect.top, factor);
+        zoomAt(e.clientX - origin.left, e.clientY - origin.top, factor);
       } else {
         cam.current.x -= e.deltaX;
         cam.current.y -= e.deltaY;
@@ -455,6 +510,7 @@ export function useCanvasCamera(
     const onResize = () => {
       viewW = container.clientWidth;
       viewH = container.clientHeight;
+      origin = container.getBoundingClientRect();
       apply();
       syncRange();
     };
@@ -462,6 +518,7 @@ export function useCanvasCamera(
 
     return () => {
       stopMomentum();
+      window.clearTimeout(wheelIdle);
       layer.style.pointerEvents = "";
       container.removeEventListener("pointerdown", onPointerDown);
       container.removeEventListener("pointermove", onPointerMove);
