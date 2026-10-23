@@ -47,14 +47,18 @@ export function ItemDetail({ item }: { item: VintageItem }) {
               {item.source.credit}
             </a>
             {" · "}
-            <a
-              href={item.source.licenseUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline decoration-ink-2/30 underline-offset-2 hover:text-ink"
-            >
-              {item.source.license}
-            </a>
+            {item.source.license === "<can't find>" ? (
+              <span title="Reuse rights have not been verified">{item.source.license}</span>
+            ) : (
+              <a
+                href={item.source.licenseUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline decoration-ink-2/30 underline-offset-2 hover:text-ink"
+              >
+                {item.source.license}
+              </a>
+            )}
           </figcaption>
         )}
       </figure>
