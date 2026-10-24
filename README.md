@@ -2,7 +2,7 @@
 
 **Virasat — an online museum of India's everyday design.**
 
-**Live site:** https://virahst.netlify.app
+**Live site:** https://virahst.vercel.app
 
 ![Virasat: a canvas of old Indian ads, packets and posters](docs/screenshot.png)
 
@@ -29,7 +29,7 @@ placeholder text, and some details may be wrong. New things are added all the ti
 
 - **Suggest an item** or **report a mistake** — [open an issue](https://github.com/SahilMotyar/Virahst/issues/new/choose).
 - **Send old photos** — photos or scans of old ads, packets, tins, labels, posters or tickets.
-  Email them to me (the address is on the [About page](https://virahst.netlify.app/about#help)),
+  Email them to me (the address is on the [About page](https://virahst.vercel.app/about#help)),
   and tell me where each one came from.
 - **Code changes** — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -85,9 +85,9 @@ Then open the address it prints (usually http://localhost:3000).
 
 ## Pages on the site
 
-- [About](https://virahst.netlify.app/about) — why I made this, and how to help
-- [Support](https://virahst.netlify.app/support) — chip in to keep it going
-- [Image credits](https://virahst.netlify.app/credits) — also in [CREDITS.md](CREDITS.md)
+- [About](https://virahst.vercel.app/about) — why I made this, and how to help
+- [Support](https://virahst.vercel.app/support) — chip in to keep it going
+- [Image credits](https://virahst.vercel.app/credits) — also in [CREDITS.md](CREDITS.md)
 
 ## For developers
 
@@ -104,4 +104,4 @@ The **code** is under the [MIT License](LICENSE).
 
 The MIT license covers the code only. **Images keep their own licenses** (public domain, CC0,
 CC BY, CC BY-SA and others). See [CREDITS.md](CREDITS.md) and the
-[/credits page](https://virahst.netlify.app/credits) for who made each picture and under which license.
+[/credits page](https://virahst.vercel.app/credits) for who made each picture and under which license.
