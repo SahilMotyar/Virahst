@@ -48,7 +48,7 @@ export default function CreditsPage() {
       <PageHeader
         devanagari="आभार"
         title="Image credits"
-        subtitle="Most pictures on Virasat come from Wikimedia Commons and are public domain or openly licensed. Thank you to everyone who made them."
+        subtitle="Most pictures are public domain or openly licensed. For entries marked <can't find>, reuse rights have not been verified."
       />
 
       <div className="mt-12 space-y-10">
@@ -78,14 +78,18 @@ export default function CreditsPage() {
                     <p className="mt-0.5 break-words text-sm leading-relaxed text-ink-2">
                       {s.author}
                       <span className="mx-1.5 opacity-40">·</span>
-                      <a
-                        href={s.licenseUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={textLink}
-                      >
-                        {s.license}
-                      </a>
+                      {s.license === "<can't find>" ? (
+                        <span title="Reuse rights have not been verified">{s.license}</span>
+                      ) : (
+                        <a
+                          href={s.licenseUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={textLink}
+                        >
+                          {s.license}
+                        </a>
+                      )}
                       <span className="mx-1.5 opacity-40">·</span>
                       <a
                         href={s.url}
