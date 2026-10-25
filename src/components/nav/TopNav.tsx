@@ -63,7 +63,10 @@ export function TopNav() {
   return (
     <nav
       aria-label="Main"
-      className="fixed inset-x-0 top-0 z-40 flex items-center justify-between px-4 py-2.5 sm:px-7 sm:py-3.5"
+      // Solid paper background so the links stay readable over the canvas
+      // and page content. Deliberately no backdrop-filter: a blur would be
+      // recomputed every frame while the canvas pans underneath.
+      className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-black/5 bg-bg px-4 py-2.5 sm:px-7 sm:py-3.5"
     >
       <Link
         href="/"
